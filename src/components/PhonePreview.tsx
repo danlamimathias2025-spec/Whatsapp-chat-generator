@@ -7,6 +7,7 @@ import {
   StatusBarConfig,
   ThemeConfig,
   WallpaperConfig,
+  WatermarkConfig,
 } from '../types/chat';
 import { StatusBar } from './StatusBar';
 import { ChatHeader } from './ChatHeader';
@@ -22,6 +23,7 @@ interface PhonePreviewProps {
   theme: ThemeConfig;
   wallpaper: WallpaperConfig;
   deviceFrame: DeviceFrameConfig;
+  watermark?: WatermarkConfig;
   platform?: AppPlatform;
   zoom?: number;
   onEditMessage?: (message: ChatMessage) => void;
@@ -42,6 +44,7 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
       theme,
       wallpaper,
       deviceFrame,
+      watermark,
       platform = 'whatsapp',
       zoom = 1,
       onEditMessage,
@@ -104,7 +107,9 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
               <div
                 className="absolute inset-0 z-0 bg-cover bg-center pointer-events-none transition-all duration-200"
                 style={{
-                  backgroundImage: `url(${wallpaper.imageUrl})`,
+                  background: wallpaper.imageUrl.includes('gradient')
+                    ? wallpaper.imageUrl
+                    : `url(${wallpaper.imageUrl})`,
                   opacity: wallpaper.opacity,
                   filter: `blur(${wallpaper.blur}px)`,
                   transform: `scale(${wallpaper.zoom})`,
@@ -180,6 +185,29 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
               onSendMessage={onSendMessage}
               activeSender="user"
             />
+
+            {/* Watermark Overlay */}
+            {watermark?.enabled && watermark.text && (
+              <div
+                className={`absolute z-30 pointer-events-none font-bold tracking-wider select-none px-2.5 py-1 rounded-md bg-black/20 backdrop-blur-[2px] text-white/90 shadow-sm ${
+                  watermark.position === 'bottom-right'
+                    ? 'bottom-16 right-4'
+                    : watermark.position === 'bottom-left'
+                    ? 'bottom-16 left-4'
+                    : watermark.position === 'top-right'
+                    ? 'top-16 right-4'
+                    : watermark.position === 'top-left'
+                    ? 'top-16 left-4'
+                    : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
+                }`}
+                style={{
+                  opacity: watermark.opacity,
+                  fontSize: `${watermark.fontSize}px`,
+                }}
+              >
+                {watermark.text}
+              </div>
+            )}
 
             {/* Optional Device Home Bar */}
             {deviceFrame.showNavigationBar && (

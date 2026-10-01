@@ -7,6 +7,7 @@ import {
   StatusBarConfig,
   ThemeConfig,
   WallpaperConfig,
+  WatermarkConfig,
 } from '../types/chat';
 import { PhonePreview } from './PhonePreview';
 
@@ -20,6 +21,7 @@ interface FullscreenPreviewModalProps {
   theme: ThemeConfig;
   wallpaper: WallpaperConfig;
   deviceFrame: DeviceFrameConfig;
+  watermark?: WatermarkConfig;
   platform?: AppPlatform;
   onSendMessage?: (text: string, sender: 'user' | 'recipient') => void;
   referenceImageUrl?: string;
@@ -35,6 +37,7 @@ export const FullscreenPreviewModal: React.FC<FullscreenPreviewModalProps> = ({
   theme,
   wallpaper,
   deviceFrame,
+  watermark,
   platform = 'whatsapp',
   onSendMessage,
   referenceImageUrl,
@@ -113,6 +116,7 @@ export const FullscreenPreviewModal: React.FC<FullscreenPreviewModalProps> = ({
                 theme={theme}
                 wallpaper={wallpaper}
                 deviceFrame={{ ...deviceFrame, showDeviceBezels: false }}
+                watermark={watermark}
                 platform={platform}
                 onSendMessage={onSendMessage}
               />
@@ -127,6 +131,7 @@ export const FullscreenPreviewModal: React.FC<FullscreenPreviewModalProps> = ({
             theme={theme}
             wallpaper={wallpaper}
             deviceFrame={deviceFrame}
+            watermark={watermark}
             platform={platform}
             onSendMessage={onSendMessage}
           />

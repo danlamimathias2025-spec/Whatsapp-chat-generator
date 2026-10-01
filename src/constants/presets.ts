@@ -1,4 +1,4 @@
-import { ContactProfile, StatusBarConfig, ThemeConfig, WallpaperConfig, ChatMessage } from '../types/chat';
+import { ContactProfile, StatusBarConfig, ThemeConfig, WallpaperConfig, WatermarkConfig, ChatMessage } from '../types/chat';
 
 // Generated assets
 export const ASSETS = {
@@ -7,6 +7,52 @@ export const ASSETS = {
   warningAvatarBadge: '/src/assets/images/warning_avatar_badge_1790873707562.jpg',
   nancyAvatar: '/src/assets/images/nancy_telegram_avatar_1790875969702.jpg',
 };
+
+export interface WallpaperPreset {
+  id: string;
+  name: string;
+  type: 'image' | 'gradient' | 'solid';
+  value: string; // image URL or CSS gradient/color string
+}
+
+export const WALLPAPER_PRESETS: WallpaperPreset[] = [
+  {
+    id: 'roses',
+    name: 'Romantic Roses',
+    type: 'image',
+    value: ASSETS.wallpaper,
+  },
+  {
+    id: 'midnight_blue',
+    name: 'Midnight Blue Gradient',
+    type: 'gradient',
+    value: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%)',
+  },
+  {
+    id: 'emerald_glow',
+    name: 'Emerald Cyberpunk',
+    type: 'gradient',
+    value: 'linear-gradient(135deg, #022c22 0%, #064e3b 50%, #022f2e 100%)',
+  },
+  {
+    id: 'velvet_plum',
+    name: 'Velvet Plum Velvet',
+    type: 'gradient',
+    value: 'linear-gradient(135deg, #3b0764 0%, #581c87 50%, #4c1d95 100%)',
+  },
+  {
+    id: 'sunset_glow',
+    name: 'Sunset Twilight',
+    type: 'gradient',
+    value: 'linear-gradient(135deg, #431407 0%, #7c2d12 50%, #881337 100%)',
+  },
+  {
+    id: 'amoled_black',
+    name: 'Pure AMOLED Black',
+    type: 'solid',
+    value: '#000000',
+  },
+];
 
 export const DEFAULT_TELEGRAM_RECIPIENT: ContactProfile = {
   name: 'Nancy B',
@@ -210,15 +256,28 @@ export const DEFAULT_STATUS_BAR: StatusBarConfig = {
   showStatusBar: true,
   time: '5:32 PM',
   batteryLevel: 68,
+  showBatteryPercent: true,
   isCharging: false,
+  wifiEnabled: true,
   wifiStrength: 4,
+  mobileDataEnabled: true,
   signalStrength: 4,
   networkType: '4G',
+  showNotificationIcon: true,
+  notificationType: 'message',
   showAlarm: false,
   showLocation: false,
   showBluetooth: false,
   style: 'android',
   darkModeIcons: false, // white icons on dark background
+};
+
+export const DEFAULT_WATERMARK: WatermarkConfig = {
+  enabled: false,
+  text: 'Generated with AI Studio Studio',
+  position: 'bottom-right',
+  opacity: 0.5,
+  fontSize: 12,
 };
 
 export const THEMES: Record<string, ThemeConfig> = {

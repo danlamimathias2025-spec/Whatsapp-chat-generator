@@ -107,15 +107,28 @@ export interface StatusBarConfig {
   showStatusBar: boolean;
   time: string;
   batteryLevel: number; // 0 - 100
+  showBatteryPercent: boolean;
   isCharging: boolean;
-  wifiStrength: number; // 0 to 4 (0 is hidden)
-  signalStrength: number; // 0 to 5 (0 is hidden)
+  wifiEnabled: boolean;
+  wifiStrength: number; // 1 to 4
+  mobileDataEnabled: boolean;
+  signalStrength: number; // 1 to 5
   networkType: '5G' | '4G' | 'LTE' | '3G' | 'VoLTE' | 'none';
+  showNotificationIcon: boolean;
+  notificationType: 'message' | 'mail' | 'call' | 'dot';
   showAlarm: boolean;
   showLocation: boolean;
   showBluetooth: boolean;
   style: 'android' | 'ios';
   darkModeIcons: boolean;
+}
+
+export interface WatermarkConfig {
+  enabled: boolean;
+  text: string;
+  position: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | 'center';
+  opacity: number; // 0.1 to 1
+  fontSize: number; // 10 to 32
 }
 
 export interface ThemeConfig {

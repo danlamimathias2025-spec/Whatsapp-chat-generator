@@ -376,10 +376,33 @@ export const MessageEditorModal: React.FC<MessageEditorModalProps> = ({
 
           {/* 1. TEXT */}
           {type === 'text' && (
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                Message Content
-              </label>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Message Content
+                </label>
+                <span className="text-[11px] text-slate-500">Click emoji to insert</span>
+              </div>
+
+              {/* Emoji Picker Bar */}
+              <div className="flex flex-wrap gap-1 p-2 bg-slate-900 border border-slate-800 rounded-xl">
+                {[
+                  '😀', '😂', '🔥', '👍', '❤️', '🎉', '💯', '✨',
+                  '🙏', '🚀', '😈', '✅', '💰', '⚡', '🌹', '👀',
+                  '🥺', '😎', '🙌', '💸', '🤑', '🤝', '⭐', '👇', '💪'
+                ].map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => setText((prev) => prev + emoji)}
+                    className="w-7 h-7 rounded-lg hover:bg-slate-800 flex items-center justify-center text-base transition-colors"
+                    title={`Insert ${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+
               <textarea
                 rows={3}
                 value={text}
@@ -409,7 +432,7 @@ export const MessageEditorModal: React.FC<MessageEditorModalProps> = ({
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
-                    Playback Progress ({waveformProgress}%)
+                    Playback State / Progress ({waveformProgress}%)
                   </label>
                   <input
                     type="range"
@@ -419,6 +442,48 @@ export const MessageEditorModal: React.FC<MessageEditorModalProps> = ({
                     onChange={(e) => setWaveformProgress(Number(e.target.value))}
                     className="w-full accent-emerald-500 mt-2"
                   />
+                </div>
+              </div>
+
+              {/* Quick Playback State Presets */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                  Playback State Presets
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setWaveformProgress(0)}
+                    className={`py-1.5 px-2 rounded-xl text-xs font-medium border transition-colors ${
+                      waveformProgress === 0
+                        ? 'border-emerald-500 bg-emerald-950/40 text-emerald-200'
+                        : 'border-slate-800 bg-slate-950 text-slate-400'
+                    }`}
+                  >
+                    🔴 Unplayed (0%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWaveformProgress(50)}
+                    className={`py-1.5 px-2 rounded-xl text-xs font-medium border transition-colors ${
+                      waveformProgress === 50
+                        ? 'border-emerald-500 bg-emerald-950/40 text-emerald-200'
+                        : 'border-slate-800 bg-slate-950 text-slate-400'
+                    }`}
+                  >
+                    🟡 Half Played (50%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWaveformProgress(100)}
+                    className={`py-1.5 px-2 rounded-xl text-xs font-medium border transition-colors ${
+                      waveformProgress === 100
+                        ? 'border-emerald-500 bg-emerald-950/40 text-emerald-200'
+                        : 'border-slate-800 bg-slate-950 text-slate-400'
+                    }`}
+                  >
+                    🟢 Fully Played (100%)
+                  </button>
                 </div>
               </div>
 

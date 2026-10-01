@@ -7,12 +7,14 @@ import {
   StatusBarConfig,
   ThemeConfig,
   WallpaperConfig,
+  WatermarkConfig,
 } from './types/chat';
 import {
   DEFAULT_RECIPIENT,
   DEFAULT_SENDER,
   DEFAULT_STATUS_BAR,
   DEFAULT_WALLPAPER,
+  DEFAULT_WATERMARK,
   REFERENCE_MESSAGES,
   THEMES,
   DEFAULT_TELEGRAM_RECIPIENT,
@@ -58,6 +60,36 @@ export default function App() {
     showDeviceBezels: true,
     showNavigationBar: false,
   });
+  const [watermark, setWatermark] = useState<WatermarkConfig>(DEFAULT_WATERMARK);
+  const [smartChronologyEnabled, setSmartChronologyEnabled] = useState<boolean>(true);
+  const [smartChronologyMinutes, setSmartChronologyMinutes] = useState<number>(2);
+
+  // Helper for Smart Chronology timestamp calculation
+  const calculateNextTimestamp = (currentMessages: ChatMessage[], incrementMinutes: number): string => {
+    const lastMsgWithTime = [...currentMessages].reverse().find((m) => m.time && m.time.trim() !== '');
+    let baseDate = new Date();
+
+    if (lastMsgWithTime && lastMsgWithTime.time) {
+      const parts = lastMsgWithTime.time.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+      if (parts) {
+        let hours = parseInt(parts[1], 10);
+        const minutes = parseInt(parts[2], 10);
+        const ampm = parts[3] ? parts[3].toUpperCase() : '';
+
+        if (ampm === 'PM' && hours < 12) hours += 12;
+        if (ampm === 'AM' && hours === 12) hours = 0;
+
+        baseDate.setHours(hours, minutes, 0, 0);
+      }
+    }
+
+    baseDate.setTime(baseDate.getTime() + incrementMinutes * 60 * 1000);
+
+    const h = baseDate.getHours() % 12 || 12;
+    const m = baseDate.getMinutes().toString().padStart(2, '0');
+    const ap = baseDate.getHours() >= 12 ? 'PM' : 'AM';
+    return `${h}:${m} ${ap}`;
+  };
 
   // Active current platform bindings
   const messages = platform === 'telegram' ? tgMessages : waMessages;
@@ -127,7 +159,14 @@ export default function App() {
       setMessages(messages.map((m) => (m.id === savedMsg.id ? savedMsg : m)));
       showToast('Message updated');
     } else {
-      setMessages([...messages, savedMsg]);
+      let finalMsg = savedMsg;
+      if (smartChronologyEnabled && (!finalMsg.time || finalMsg.time.trim() === '')) {
+        finalMsg = {
+          ...finalMsg,
+          time: calculateNextTimestamp(messages, smartChronologyMinutes),
+        };
+      }
+      setMessages([...messages, finalMsg]);
       showToast('Message added');
     }
   };
@@ -154,17 +193,22 @@ export default function App() {
   };
 
   const handleQuickSendMessage = (text: string, senderType: 'user' | 'recipient' = 'user') => {
-    const now = new Date();
-    const hours = now.getHours() % 12 || 12;
-    const mins = now.getMinutes().toString().padStart(2, '0');
-    const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+    const timeStr = smartChronologyEnabled
+      ? calculateNextTimestamp(messages, smartChronologyMinutes)
+      : (() => {
+          const now = new Date();
+          const hours = now.getHours() % 12 || 12;
+          const mins = now.getMinutes().toString().padStart(2, '0');
+          const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+          return `${hours}:${mins} ${ampm}`;
+        })();
 
     const newMsg: ChatMessage = {
       id: `msg-${Date.now()}`,
       sender: senderType,
       type: 'text',
       text,
-      time: `${hours}:${mins} ${ampm}`,
+      time: timeStr,
       status: senderType === 'user' ? 'read' : 'none',
       bubbleColor: platform === 'telegram' && senderType === 'user' ? '#8a47bb' : undefined,
     };
@@ -248,6 +292,12 @@ export default function App() {
             setWallpaper={setWallpaper}
             deviceFrame={deviceFrame}
             setDeviceFrame={setDeviceFrame}
+            watermark={watermark}
+            setWatermark={setWatermark}
+            smartChronologyEnabled={smartChronologyEnabled}
+            setSmartChronologyEnabled={setSmartChronologyEnabled}
+            smartChronologyMinutes={smartChronologyMinutes}
+            setSmartChronologyMinutes={setSmartChronologyMinutes}
             onOpenMessageModal={handleOpenMessageModal}
             onLoadReferencePreset={handleLoadReferencePreset}
             onLoadTelegramReferencePreset={handleLoadTelegramReferencePreset}
@@ -323,6 +373,7 @@ export default function App() {
             theme={theme}
             wallpaper={wallpaper}
             deviceFrame={deviceFrame}
+            watermark={watermark}
             platform={platform}
             zoom={zoom}
             onEditMessage={handleOpenMessageModal}
@@ -365,6 +416,7 @@ export default function App() {
         theme={theme}
         wallpaper={wallpaper}
         deviceFrame={deviceFrame}
+        watermark={watermark}
         platform={platform}
         onSendMessage={handleQuickSendMessage}
         referenceImageUrl={platform === 'telegram' ? telegramReferenceImageSrc : referenceImageSrc}

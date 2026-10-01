@@ -7,12 +7,14 @@ import {
   StatusBarConfig,
   ThemeConfig,
   WallpaperConfig,
+  WatermarkConfig,
 } from '../types/chat';
 import {
   ASSETS,
   THEMES,
   TELEGRAM_THEMES,
   OTHER_PRESETS,
+  WALLPAPER_PRESETS,
 } from '../constants/presets';
 
 interface ControlPanelProps {
@@ -35,6 +37,12 @@ interface ControlPanelProps {
   onOpenMessageModal: (message?: ChatMessage, defaultSender?: 'user' | 'recipient') => void;
   onLoadReferencePreset: () => void;
   onLoadTelegramReferencePreset: () => void;
+  watermark: WatermarkConfig;
+  setWatermark: React.Dispatch<React.SetStateAction<WatermarkConfig>>;
+  smartChronologyEnabled: boolean;
+  setSmartChronologyEnabled: (enabled: boolean) => void;
+  smartChronologyMinutes: number;
+  setSmartChronologyMinutes: (minutes: number) => void;
   referenceImageUrl?: string;
   telegramReferenceImageUrl?: string;
 }
@@ -56,13 +64,65 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   setWallpaper,
   deviceFrame,
   setDeviceFrame,
+  watermark,
+  setWatermark,
+  smartChronologyEnabled,
+  setSmartChronologyEnabled,
+  smartChronologyMinutes,
+  setSmartChronologyMinutes,
   onOpenMessageModal,
   onLoadReferencePreset,
   onLoadTelegramReferencePreset,
 }) => {
   const [activeTab, setActiveTab] = useState<
-    'messages' | 'profiles' | 'status' | 'theme' | 'compare'
+    'messages' | 'profiles' | 'status' | 'theme' | 'compare' | 'watermark'
   >('messages');
+
+  // Bulk selection state
+  const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
+
+  const handleToggleSelectAll = () => {
+    if (selectedMessageIds.length === messages.length) {
+      setSelectedMessageIds([]);
+    } else {
+      setSelectedMessageIds(messages.map((m) => m.id));
+    }
+  };
+
+  const handleToggleSelectMessage = (id: string) => {
+    if (selectedMessageIds.includes(id)) {
+      setSelectedMessageIds(selectedMessageIds.filter((i) => i !== id));
+    } else {
+      setSelectedMessageIds([...selectedMessageIds, id]);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    setMessages(messages.filter((m) => !selectedMessageIds.includes(m.id)));
+    setSelectedMessageIds([]);
+  };
+
+  const handleBulkToggleSender = () => {
+    setMessages(
+      messages.map((m) => {
+        if (
+          selectedMessageIds.includes(m.id) &&
+          m.type !== 'date_divider' &&
+          m.type !== 'system_notice' &&
+          m.type !== 'telegram_join'
+        ) {
+          const nextSender = m.sender === 'user' ? 'recipient' : 'user';
+          return {
+            ...m,
+            sender: nextSender,
+            status: nextSender === 'user' ? 'read' : 'none',
+          };
+        }
+        return m;
+      })
+    );
+    setSelectedMessageIds([]);
+  };
 
   // Drag & drop reordering state
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -192,6 +252,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           { id: 'profiles', label: '👤 Profiles' },
           { id: 'status', label: '🔋 Status Bar' },
           { id: 'theme', label: '🎨 Theme & BG' },
+          { id: 'watermark', label: '🛡️ Watermark' },
           { id: 'compare', label: '⚡ Presets' },
         ].map((tab) => (
           <button
@@ -217,7 +278,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       {/* Tab Contents */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* ========================================================================= */}
-        {/* TAB 1: MESSAGES LIST (DRAG & DROP) */}
+        {/* TAB 1: MESSAGES LIST (DRAG & DROP + BULK ACTIONS) */}
         {/* ========================================================================= */}
         {activeTab === 'messages' && (
           <div className="space-y-3">
@@ -243,23 +304,95 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               </button>
             </div>
 
-            {/* Drag and drop hint */}
-            <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
-              <span>Drag handle to reorder conversation</span>
-              <button
-                type="button"
-                onClick={() => setMessages([])}
-                className="text-rose-400 hover:text-rose-300 transition-colors"
-              >
-                Clear All
-              </button>
+            {/* Smart Chronology Setting Card */}
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-white">⚡ Smart Chronology</span>
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px]">Auto Time</span>
+                </div>
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={smartChronologyEnabled}
+                    onChange={(e) => setSmartChronologyEnabled(e.target.checked)}
+                    className="accent-emerald-500 rounded"
+                  />
+                  <span>{smartChronologyEnabled ? 'ON' : 'OFF'}</span>
+                </label>
+              </div>
+              {smartChronologyEnabled && (
+                <div className="flex items-center justify-between text-xs text-slate-400 pt-1.5 border-t border-slate-900">
+                  <span>Increment Interval:</span>
+                  <select
+                    value={smartChronologyMinutes}
+                    onChange={(e) => setSmartChronologyMinutes(Number(e.target.value))}
+                    className="bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-white text-xs outline-none font-mono"
+                  >
+                    <option value={1}>+1 min</option>
+                    <option value={2}>+2 mins</option>
+                    <option value={3}>+3 mins</option>
+                    <option value={5}>+5 mins</option>
+                    <option value={10}>+10 mins</option>
+                    <option value={15}>+15 mins</option>
+                  </select>
+                </div>
+              )}
             </div>
 
-            {/* Sortable Message Items */}
+            {/* Bulk Selection & Action Toolbar */}
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <label className="flex items-center gap-2 cursor-pointer text-slate-300 font-medium">
+                  <input
+                    type="checkbox"
+                    checked={messages.length > 0 && selectedMessageIds.length === messages.length}
+                    onChange={handleToggleSelectAll}
+                    className="accent-emerald-500 rounded"
+                  />
+                  <span>Select All ({selectedMessageIds.length}/{messages.length})</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMessages([]);
+                    setSelectedMessageIds([]);
+                  }}
+                  className="text-rose-400 hover:text-rose-300 transition-colors font-medium"
+                >
+                  Clear Chat
+                </button>
+              </div>
+
+              {selectedMessageIds.length > 0 && (
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-800 animate-fadeIn">
+                  <span className="text-[11px] text-emerald-400 font-bold">
+                    {selectedMessageIds.length} selected:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleBulkToggleSender}
+                    className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-semibold rounded-lg transition-colors"
+                  >
+                    ⇄ Toggle Sender
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBulkDelete}
+                    className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-semibold rounded-lg transition-colors"
+                  >
+                    🗑️ Delete
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Sortable Message Items with Checkboxes */}
             <div className="space-y-2">
               {messages.map((msg, idx) => {
                 const isUser = msg.sender === 'user';
                 const isOver = dragOverIndex === idx;
+                const isSelected = selectedMessageIds.includes(msg.id);
 
                 return (
                   <div
@@ -269,13 +402,23 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                     onDragOver={(e) => handleDragOver(e, idx)}
                     onDrop={(e) => handleDrop(e, idx)}
                     className={`p-3 rounded-xl border transition-all duration-150 flex items-center gap-2.5 ${
-                      isOver
+                      isSelected
+                        ? 'border-emerald-500/80 bg-emerald-950/20'
+                        : isOver
                         ? 'border-emerald-500 bg-emerald-950/30 scale-[1.01]'
                         : isUser
                         ? 'bg-purple-950/20 border-purple-900/40 hover:border-purple-800'
                         : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
                     }`}
                   >
+                    {/* Bulk Selection Checkbox */}
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => handleToggleSelectMessage(msg.id)}
+                      className="accent-emerald-500 rounded shrink-0"
+                    />
+
                     {/* Drag Handle */}
                     <div
                       className="cursor-grab active:cursor-grabbing text-slate-500 hover:text-slate-300 p-1 select-none"
@@ -533,21 +676,163 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 />
               </div>
 
-              <div>
-                <div className="flex justify-between text-xs text-slate-400 mb-1">
-                  <span>Battery Level</span>
-                  <span className="text-white font-bold">{statusBar.batteryLevel}%</span>
+              {/* Battery Level & Percent Toggle */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-400">Battery Level</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={statusBar.showBatteryPercent}
+                      onChange={(e) =>
+                        setStatusBar({ ...statusBar, showBatteryPercent: e.target.checked })
+                      }
+                      className="accent-emerald-500 rounded"
+                    />
+                    <span>Show %</span>
+                  </label>
                 </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={100}
-                  value={statusBar.batteryLevel}
-                  onChange={(e) =>
-                    setStatusBar({ ...statusBar, batteryLevel: Number(e.target.value) })
-                  }
-                  className="w-full accent-emerald-500"
-                />
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min={1}
+                    max={100}
+                    value={statusBar.batteryLevel}
+                    onChange={(e) =>
+                      setStatusBar({ ...statusBar, batteryLevel: Number(e.target.value) })
+                    }
+                    className="flex-1 accent-emerald-500"
+                  />
+                  <span className="text-xs font-mono text-white font-bold w-10 text-right">
+                    {statusBar.batteryLevel}%
+                  </span>
+                </div>
+              </div>
+
+              {/* WiFi Toggle & Strength */}
+              <div className="space-y-2 pt-2 border-t border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-400">Wi-Fi Status</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={statusBar.wifiEnabled}
+                      onChange={(e) =>
+                        setStatusBar({ ...statusBar, wifiEnabled: e.target.checked })
+                      }
+                      className="accent-emerald-500 rounded"
+                    />
+                    <span>{statusBar.wifiEnabled ? 'ON' : 'OFF'}</span>
+                  </label>
+                </div>
+                {statusBar.wifiEnabled && (
+                  <div>
+                    <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+                      <span>Wi-Fi Strength</span>
+                      <span>{statusBar.wifiStrength}/4</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={1}
+                      max={4}
+                      value={statusBar.wifiStrength}
+                      onChange={(e) =>
+                        setStatusBar({ ...statusBar, wifiStrength: Number(e.target.value) })
+                      }
+                      className="w-full accent-emerald-500"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Data Toggle & Strength */}
+              <div className="space-y-2 pt-2 border-t border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-400">Mobile Data / Signal</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={statusBar.mobileDataEnabled}
+                      onChange={(e) =>
+                        setStatusBar({ ...statusBar, mobileDataEnabled: e.target.checked })
+                      }
+                      className="accent-emerald-500 rounded"
+                    />
+                    <span>{statusBar.mobileDataEnabled ? 'ON' : 'OFF'}</span>
+                  </label>
+                </div>
+                {statusBar.mobileDataEnabled && (
+                  <div className="space-y-2">
+                    <div>
+                      <div className="flex justify-between text-[11px] text-slate-400 mb-1">
+                        <span>Signal Bars</span>
+                        <span>{statusBar.signalStrength}/5</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={1}
+                        max={5}
+                        value={statusBar.signalStrength}
+                        onChange={(e) =>
+                          setStatusBar({ ...statusBar, signalStrength: Number(e.target.value) })
+                        }
+                        className="w-full accent-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">Network Type</label>
+                      <select
+                        value={statusBar.networkType}
+                        onChange={(e) =>
+                          setStatusBar({ ...statusBar, networkType: e.target.value as any })
+                        }
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-white text-xs outline-none"
+                      >
+                        <option value="5G">5G</option>
+                        <option value="4G">4G</option>
+                        <option value="LTE">LTE</option>
+                        <option value="3G">3G</option>
+                        <option value="VoLTE">VoLTE</option>
+                        <option value="none">None</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Notification Icon Toggle & Type */}
+              <div className="space-y-2 pt-2 border-t border-slate-800">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-400">Notification Icon</span>
+                  <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
+                    <input
+                      type="checkbox"
+                      checked={statusBar.showNotificationIcon}
+                      onChange={(e) =>
+                        setStatusBar({ ...statusBar, showNotificationIcon: e.target.checked })
+                      }
+                      className="accent-emerald-500 rounded"
+                    />
+                    <span>{statusBar.showNotificationIcon ? 'Shown' : 'Hidden'}</span>
+                  </label>
+                </div>
+                {statusBar.showNotificationIcon && (
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Icon Type</label>
+                    <select
+                      value={statusBar.notificationType}
+                      onChange={(e) =>
+                        setStatusBar({ ...statusBar, notificationType: e.target.value as any })
+                      }
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-white text-xs outline-none"
+                    >
+                      <option value="message">💬 Message Bubble</option>
+                      <option value="mail">✉️ Mail Envelope</option>
+                      <option value="call">📞 Phone Call</option>
+                      <option value="dot">🟢 Notification Dot</option>
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -590,6 +875,198 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Professional Chat Backgrounds & Color Gradients Library */}
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+              <span className="text-xs font-bold text-white uppercase tracking-wider block">
+                Professional Backgrounds & Gradients
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                {WALLPAPER_PRESETS.map((wp) => (
+                  <button
+                    key={wp.id}
+                    type="button"
+                    onClick={() =>
+                      setWallpaper({
+                        ...wallpaper,
+                        imageUrl: wp.value,
+                      })
+                    }
+                    className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
+                      wallpaper.imageUrl === wp.value
+                        ? 'border-emerald-500 bg-emerald-950/30'
+                        : 'border-slate-800 bg-slate-900 hover:border-slate-700'
+                    }`}
+                  >
+                    <div
+                      className="w-8 h-10 rounded-lg shrink-0 border border-white/10 overflow-hidden"
+                      style={{
+                        background: wp.value.includes('gradient')
+                          ? wp.value
+                          : `url(${wp.value}) center/cover`,
+                      }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <span className="text-xs font-semibold text-white block truncate">
+                        {wp.name}
+                      </span>
+                      <span className="text-[10px] text-slate-400 uppercase">{wp.type}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Custom Wallpaper URL Input */}
+              <div className="space-y-1.5 pt-2">
+                <label className="block text-xs font-medium text-slate-400">
+                  Custom Wallpaper URL / Image
+                </label>
+                <input
+                  type="text"
+                  value={wallpaper.imageUrl?.includes('gradient') ? '' : wallpaper.imageUrl || ''}
+                  onChange={(e) => setWallpaper({ ...wallpaper, imageUrl: e.target.value })}
+                  placeholder="https://images.unsplash.com/..."
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs outline-none"
+                />
+              </div>
+
+              {/* Wallpaper Opacity & Blur Sliders */}
+              <div className="space-y-3 pt-2">
+                <div>
+                  <div className="flex justify-between text-xs text-slate-400 mb-1">
+                    <span>Background Opacity</span>
+                    <span className="text-white font-mono">
+                      {Math.round(wallpaper.opacity * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0.1}
+                    max={1}
+                    step={0.05}
+                    value={wallpaper.opacity}
+                    onChange={(e) =>
+                      setWallpaper({ ...wallpaper, opacity: Number(e.target.value) })
+                    }
+                    className="w-full accent-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between text-xs text-slate-400 mb-1">
+                    <span>Background Blur</span>
+                    <span className="text-white font-mono">{wallpaper.blur}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={20}
+                    step={1}
+                    value={wallpaper.blur}
+                    onChange={(e) => setWallpaper({ ...wallpaper, blur: Number(e.target.value) })}
+                    className="w-full accent-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 6: WATERMARK SETTINGS */}
+        {/* ========================================================================= */}
+        {activeTab === 'watermark' && (
+          <div className="space-y-4">
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white uppercase tracking-wider">
+                  Export Watermark Overlay
+                </span>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={watermark.enabled}
+                    onChange={(e) =>
+                      setWatermark({ ...watermark, enabled: e.target.checked })
+                    }
+                    className="accent-emerald-500 rounded"
+                  />
+                  <span className="text-xs text-slate-300 font-semibold">Enable Watermark</span>
+                </label>
+              </div>
+
+              {watermark.enabled && (
+                <div className="space-y-3 pt-2">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">
+                      Watermark Text / Brand
+                    </label>
+                    <input
+                      type="text"
+                      value={watermark.text}
+                      onChange={(e) => setWatermark({ ...watermark, text: e.target.value })}
+                      placeholder="e.g. @YourBrand / Confidential"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1">Position</label>
+                    <select
+                      value={watermark.position}
+                      onChange={(e) =>
+                        setWatermark({ ...watermark, position: e.target.value as any })
+                      }
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs outline-none"
+                    >
+                      <option value="bottom-right">Bottom Right</option>
+                      <option value="bottom-left">Bottom Left</option>
+                      <option value="top-right">Top Right</option>
+                      <option value="top-left">Top Left</option>
+                      <option value="center">Center</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs text-slate-400 mb-1">
+                      <span>Opacity</span>
+                      <span className="text-white font-mono">
+                        {Math.round(watermark.opacity * 100)}%
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.1}
+                      max={1}
+                      step={0.05}
+                      value={watermark.opacity}
+                      onChange={(e) =>
+                        setWatermark({ ...watermark, opacity: Number(e.target.value) })
+                      }
+                      className="w-full accent-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs text-slate-400 mb-1">
+                      <span>Font Size</span>
+                      <span className="text-white font-mono">{watermark.fontSize}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={10}
+                      max={32}
+                      step={1}
+                      value={watermark.fontSize}
+                      onChange={(e) =>
+                        setWatermark({ ...watermark, fontSize: Number(e.target.value) })
+                      }
+                      className="w-full accent-emerald-500"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
