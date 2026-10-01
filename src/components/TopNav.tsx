@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ExportOptions } from '../utils/exportImage';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface TopNavProps {
   onExport: (options: ExportOptions) => void;
@@ -100,6 +101,9 @@ export const TopNav: React.FC<TopNavProps> = ({
 
       {/* Zone 3: Primary Action & Export Controls */}
       <div className="flex items-center gap-2.5">
+        {/* PWA Install Button */}
+        <PWAInstallButton variant="topnav" />
+
         {/* Dark Mode Quick Toggle */}
         <button
           type="button"

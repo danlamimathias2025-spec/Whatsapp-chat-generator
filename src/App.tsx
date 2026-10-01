@@ -28,6 +28,7 @@ import { PhonePreview } from './components/PhonePreview';
 import { MessageEditorModal } from './components/MessageEditorModal';
 import { FullscreenPreviewModal } from './components/FullscreenPreviewModal';
 import { BottomNavBar } from './components/BottomNavBar';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { exportElementAsImage, copyElementToClipboard, ExportOptions } from './utils/exportImage';
 
 export default function App() {
@@ -428,6 +429,9 @@ export default function App() {
           <span>{toastMessage}</span>
         </div>
       )}
+
+      {/* Offline Mode Status Indicator */}
+      <OfflineIndicator />
     </div>
   );
 }

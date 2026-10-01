@@ -1,5 +1,6 @@
 import React from 'react';
 import { AppPlatform } from '../types/chat';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface BottomNavBarProps {
   platform: AppPlatform;
@@ -71,6 +72,9 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
           </span>
         )}
       </button>
+
+      {/* PWA Install Button */}
+      <PWAInstallButton variant="bottomnav" />
     </nav>
   );
 };
