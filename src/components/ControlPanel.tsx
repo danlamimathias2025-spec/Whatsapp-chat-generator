@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   AppPlatform,
   ChatMessage,
@@ -77,6 +77,37 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   const [activeTab, setActiveTab] = useState<
     'messages' | 'profiles' | 'status' | 'theme' | 'compare' | 'watermark'
   >('messages');
+
+  // File Input Refs for Profile Image Uploads
+  const recipientFileInputRef = useRef<HTMLInputElement>(null);
+  const senderFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarFileUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    target: 'recipient' | 'sender'
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Selected image file is too large. Please select an image under 10MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        if (target === 'recipient') {
+          setRecipient((prev) => ({ ...prev, avatarUrl: dataUrl }));
+        } else {
+          setSender((prev) => ({ ...prev, avatarUrl: dataUrl }));
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   // Bulk selection state
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([]);
@@ -533,10 +564,32 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         {/* ========================================================================= */}
         {activeTab === 'profiles' && (
           <div className="space-y-4">
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block">
-                Recipient Contact ({platform === 'telegram' ? 'Telegram' : 'WhatsApp'})
-              </span>
+            {/* Hidden File Inputs */}
+            <input
+              type="file"
+              ref={recipientFileInputRef}
+              accept="image/*"
+              onChange={(e) => handleAvatarFileUpload(e, 'recipient')}
+              className="hidden"
+            />
+            <input
+              type="file"
+              ref={senderFileInputRef}
+              accept="image/*"
+              onChange={(e) => handleAvatarFileUpload(e, 'sender')}
+              className="hidden"
+            />
+
+            {/* Recipient Contact Settings */}
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block">
+                  Recipient Profile ({platform === 'telegram' ? 'Telegram' : 'WhatsApp'})
+                </span>
+                <span className="text-[10px] bg-slate-900 border border-slate-800 text-slate-400 px-2 py-0.5 rounded-full">
+                  Chat Header Avatar
+                </span>
+              </div>
 
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1">
@@ -592,47 +645,162 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
-                  Profile Picture
+              {/* Profile Picture Upload Section */}
+              <div className="space-y-2 pt-2 border-t border-slate-900">
+                <label className="block text-xs font-medium text-slate-300">
+                  Profile Picture (Click Avatar or Upload Button)
                 </label>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0">
-                    <img
-                      src={recipient.avatarUrl || ASSETS.nancyAvatar}
-                      alt="Avatar"
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
+                <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 flex items-center gap-3.5">
+                  {/* Interactive Avatar Preview */}
+                  <div
+                    onClick={() => recipientFileInputRef.current?.click()}
+                    className="relative w-14 h-14 rounded-full overflow-hidden bg-slate-800 border-2 border-slate-700 shrink-0 group cursor-pointer shadow-md"
+                    title="Click to Upload Profile Picture"
+                  >
+                    {recipient.avatarUrl ? (
+                      <img
+                        src={recipient.avatarUrl}
+                        alt="Recipient Avatar"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center text-sm font-bold text-white uppercase">
+                        {recipient.name.slice(0, 2) || 'NB'}
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-medium">
+                      <span>📷</span>
+                      <span>Change</span>
+                    </div>
                   </div>
-                  <div className="flex-1 space-y-1.5">
+
+                  {/* Upload Controls */}
+                  <div className="flex-1 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => recipientFileInputRef.current?.click()}
+                      className={`w-full py-2 px-3 rounded-xl text-xs font-bold text-white flex items-center justify-center gap-2 shadow-md transition-all active:scale-98 ${
+                        platform === 'telegram'
+                          ? 'bg-[#2a8ee4] hover:bg-[#257dc8]'
+                          : 'bg-emerald-600 hover:bg-emerald-500'
+                      }`}
+                    >
+                      <span>📁 Upload Image File</span>
+                    </button>
+
                     <input
                       type="text"
-                      value={recipient.avatarUrl}
+                      value={recipient.avatarUrl || ''}
                       onChange={(e) => setRecipient({ ...recipient, avatarUrl: e.target.value })}
-                      placeholder="Image URL"
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 text-white text-xs outline-none"
+                      placeholder="Or paste Image URL..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-white text-xs outline-none"
                     />
-                    <div className="flex gap-2 flex-wrap">
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div className="space-y-1 pt-1">
+                  <span className="text-[11px] text-slate-400 font-medium block">Quick Avatar Presets:</span>
+                  <div className="flex gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setRecipient({ ...recipient, avatarUrl: ASSETS.nancyAvatar })}
+                      className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-[11px] border border-slate-800"
+                    >
+                      👩 Nancy B
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecipient({ ...recipient, avatarUrl: ASSETS.warningAvatarBadge })}
+                      className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-[11px] border border-slate-800"
+                    >
+                      ⚠️ Warning Sign
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRecipient({ ...recipient, avatarUrl: ASSETS.purpleMicBadge })}
+                      className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-[11px] border border-slate-800"
+                    >
+                      🎤 Neon Mic
+                    </button>
+                    {recipient.avatarUrl && (
                       <button
                         type="button"
-                        onClick={() =>
-                          setRecipient({ ...recipient, avatarUrl: ASSETS.nancyAvatar })
-                        }
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px]"
+                        onClick={() => setRecipient({ ...recipient, avatarUrl: '' })}
+                        className="px-2.5 py-1 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 rounded-lg text-[11px] border border-rose-800/40"
                       >
-                        👩 Nancy B Preset
+                        ❌ Clear Avatar
                       </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setRecipient({ ...recipient, avatarUrl: ASSETS.warningAvatarBadge })
-                        }
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px]"
-                      >
-                        ⚠️ Warning Sign Preset
-                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sender / Your Profile Settings */}
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
+              <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider block">
+                Your Profile (Outgoing Messages)
+              </span>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">
+                  Your Display Name
+                </label>
+                <input
+                  type="text"
+                  value={sender.name}
+                  onChange={(e) => setSender({ ...sender, name: e.target.value })}
+                  placeholder="You"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:border-indigo-500 outline-none"
+                />
+              </div>
+
+              {/* Sender Avatar Upload */}
+              <div className="space-y-2 pt-1 border-t border-slate-900">
+                <label className="block text-xs font-medium text-slate-300">
+                  Your Profile Picture
+                </label>
+                <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 flex items-center gap-3.5">
+                  <div
+                    onClick={() => senderFileInputRef.current?.click()}
+                    className="relative w-12 h-12 rounded-full overflow-hidden bg-slate-800 border-2 border-slate-700 shrink-0 group cursor-pointer shadow-md"
+                    title="Click to Upload Your Avatar"
+                  >
+                    {sender.avatarUrl ? (
+                      <img
+                        src={sender.avatarUrl}
+                        alt="Your Avatar"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-tr from-purple-500 to-indigo-600 flex items-center justify-center text-xs font-bold text-white uppercase">
+                        {sender.name.slice(0, 2) || 'YOU'}
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[9px] font-medium">
+                      <span>📷</span>
+                      <span>Upload</span>
                     </div>
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => senderFileInputRef.current?.click()}
+                      className="w-full py-1.5 px-3 rounded-xl text-xs font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center gap-2 transition-all active:scale-98"
+                    >
+                      <span>📁 Choose File</span>
+                    </button>
+                    <input
+                      type="text"
+                      value={sender.avatarUrl || ''}
+                      onChange={(e) => setSender({ ...sender, avatarUrl: e.target.value })}
+                      placeholder="Or paste Image URL..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1 text-white text-xs outline-none"
+                    />
                   </div>
                 </div>
               </div>

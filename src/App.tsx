@@ -117,6 +117,28 @@ export default function App() {
   const telegramReferenceImageSrc = '/Screenshot_20261001-183044_Telegram.jpg';
 
   const phoneCanvasRef = useRef<HTMLDivElement>(null);
+  const headerAvatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleHeaderAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('Image file too large (max 10MB)');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setRecipient((prev) => ({ ...prev, avatarUrl: dataUrl }));
+        showToast('Profile picture updated!');
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -365,6 +387,15 @@ export default function App() {
             </button>
           </div>
 
+          {/* Hidden File Input for Direct Phone Header Avatar Upload */}
+          <input
+            type="file"
+            ref={headerAvatarInputRef}
+            accept="image/*"
+            onChange={handleHeaderAvatarUpload}
+            className="hidden"
+          />
+
           <PhonePreview
             ref={phoneCanvasRef}
             messages={messages}
@@ -381,6 +412,7 @@ export default function App() {
             onDeleteMessage={handleDeleteMessage}
             onToggleSender={handleToggleSender}
             onSendMessage={handleQuickSendMessage}
+            onHeaderAvatarClick={() => headerAvatarInputRef.current?.click()}
           />
         </section>
       </main>
