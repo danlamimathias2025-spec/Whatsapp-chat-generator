@@ -1,0 +1,6 @@
+{
+  "name": "WhatsCraft - WhatsApp Chat & Screenshot Creator",
+  "description": "Create authentic, high-resolution WhatsApp and WhatsApp Business chat screenshots with custom messages, voice notes, custom wallpapers, status bar icons, themes, and drag-and-drop builder.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
