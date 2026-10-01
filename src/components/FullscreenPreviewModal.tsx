@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  AppPlatform,
   ChatMessage,
   ContactProfile,
   DeviceFrameConfig,
@@ -19,6 +20,7 @@ interface FullscreenPreviewModalProps {
   theme: ThemeConfig;
   wallpaper: WallpaperConfig;
   deviceFrame: DeviceFrameConfig;
+  platform?: AppPlatform;
   onSendMessage?: (text: string, sender: 'user' | 'recipient') => void;
   referenceImageUrl?: string;
 }
@@ -33,6 +35,7 @@ export const FullscreenPreviewModal: React.FC<FullscreenPreviewModalProps> = ({
   theme,
   wallpaper,
   deviceFrame,
+  platform = 'whatsapp',
   onSendMessage,
   referenceImageUrl,
 }) => {
@@ -110,6 +113,7 @@ export const FullscreenPreviewModal: React.FC<FullscreenPreviewModalProps> = ({
                 theme={theme}
                 wallpaper={wallpaper}
                 deviceFrame={{ ...deviceFrame, showDeviceBezels: false }}
+                platform={platform}
                 onSendMessage={onSendMessage}
               />
             </div>
@@ -123,6 +127,7 @@ export const FullscreenPreviewModal: React.FC<FullscreenPreviewModalProps> = ({
             theme={theme}
             wallpaper={wallpaper}
             deviceFrame={deviceFrame}
+            platform={platform}
             onSendMessage={onSendMessage}
           />
         )}

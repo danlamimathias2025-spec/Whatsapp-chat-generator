@@ -1,5 +1,6 @@
 import React, { forwardRef, useEffect, useRef } from 'react';
 import {
+  AppPlatform,
   ChatMessage,
   ContactProfile,
   DeviceFrameConfig,
@@ -9,6 +10,7 @@ import {
 } from '../types/chat';
 import { StatusBar } from './StatusBar';
 import { ChatHeader } from './ChatHeader';
+import { TelegramHeader } from './TelegramHeader';
 import { MessageItem } from './MessageItem';
 import { ChatInputBar } from './ChatInputBar';
 
@@ -20,6 +22,7 @@ interface PhonePreviewProps {
   theme: ThemeConfig;
   wallpaper: WallpaperConfig;
   deviceFrame: DeviceFrameConfig;
+  platform?: AppPlatform;
   zoom?: number;
   onEditMessage?: (message: ChatMessage) => void;
   onDeleteMessage?: (id: string) => void;
@@ -39,6 +42,7 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
       theme,
       wallpaper,
       deviceFrame,
+      platform = 'whatsapp',
       zoom = 1,
       onEditMessage,
       onDeleteMessage,
@@ -89,7 +93,7 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
           {/* Screenshot Target Canvas Container */}
           <div
             ref={ref}
-            id="whatsapp-chat-canvas"
+            id="chat-canvas-target"
             className="relative w-[380px] sm:w-[412px] h-[780px] flex flex-col overflow-hidden bg-slate-950 font-sans select-none rounded-[32px]"
             style={{
               backgroundColor: theme.chatBg,
@@ -120,13 +124,22 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
             {/* 2. Top System Status Bar */}
             <StatusBar config={statusBar} />
 
-            {/* 3. WhatsApp Chat Header */}
-            <ChatHeader
-              recipient={recipient}
-              theme={theme}
-              onAvatarClick={onHeaderAvatarClick}
-              onNameClick={onHeaderNameClick}
-            />
+            {/* 3. Chat Header (WhatsApp or Telegram) */}
+            {platform === 'telegram' ? (
+              <TelegramHeader
+                recipient={recipient}
+                theme={theme}
+                onAvatarClick={onHeaderAvatarClick}
+                onNameClick={onHeaderNameClick}
+              />
+            ) : (
+              <ChatHeader
+                recipient={recipient}
+                theme={theme}
+                onAvatarClick={onHeaderAvatarClick}
+                onNameClick={onHeaderNameClick}
+              />
+            )}
 
             {/* 4. Scrollable Chat Messages Content */}
             <div
@@ -152,6 +165,7 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
                     theme={theme}
                     recipient={recipient}
                     sender={sender}
+                    platform={platform}
                     onEdit={onEditMessage}
                     onDelete={onDeleteMessage}
                     onToggleSender={onToggleSender}
@@ -160,14 +174,14 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
               )}
             </div>
 
-            {/* 5. Bottom WhatsApp Input Bar */}
+            {/* 5. Bottom Chat Input Bar */}
             <ChatInputBar
               theme={theme}
               onSendMessage={onSendMessage}
               activeSender="user"
             />
 
-            {/* Optional Device Home Bar / Android Navigation Indicator */}
+            {/* Optional Device Home Bar */}
             {deviceFrame.showNavigationBar && (
               <div className="w-full flex items-center justify-center py-1 pb-2 z-20">
                 <div className="w-32 h-1 rounded-full bg-white/40" />

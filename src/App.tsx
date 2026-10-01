@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import {
+  AppPlatform,
   ChatMessage,
   ContactProfile,
   DeviceFrameConfig,
@@ -14,27 +15,61 @@ import {
   DEFAULT_WALLPAPER,
   REFERENCE_MESSAGES,
   THEMES,
+  DEFAULT_TELEGRAM_RECIPIENT,
+  DEFAULT_TELEGRAM_SENDER,
+  TELEGRAM_THEMES,
+  TELEGRAM_REFERENCE_MESSAGES,
 } from './constants/presets';
 import { TopNav } from './components/TopNav';
 import { ControlPanel } from './components/ControlPanel';
 import { PhonePreview } from './components/PhonePreview';
 import { MessageEditorModal } from './components/MessageEditorModal';
 import { FullscreenPreviewModal } from './components/FullscreenPreviewModal';
+import { BottomNavBar } from './components/BottomNavBar';
 import { exportElementAsImage, copyElementToClipboard, ExportOptions } from './utils/exportImage';
 
 export default function App() {
-  // Main chat state initialized with uploaded screenshot reference
-  const [messages, setMessages] = useState<ChatMessage[]>(REFERENCE_MESSAGES);
-  const [recipient, setRecipient] = useState<ContactProfile>(DEFAULT_RECIPIENT);
-  const [sender, setSender] = useState<ContactProfile>(DEFAULT_SENDER);
+  const [platform, setPlatform] = useState<AppPlatform>('telegram'); // Default to Telegram to match latest user screenshot request
+
+  // WhatsApp states
+  const [waMessages, setWaMessages] = useState<ChatMessage[]>(REFERENCE_MESSAGES);
+  const [waRecipient, setWaRecipient] = useState<ContactProfile>(DEFAULT_RECIPIENT);
+  const [waSender, setWaSender] = useState<ContactProfile>(DEFAULT_SENDER);
+  const [waTheme, setWaTheme] = useState<ThemeConfig>(THEMES.reference_purple);
+  const [waWallpaper, setWaWallpaper] = useState<WallpaperConfig>(DEFAULT_WALLPAPER);
+
+  // Telegram states
+  const [tgMessages, setTgMessages] = useState<ChatMessage[]>(TELEGRAM_REFERENCE_MESSAGES);
+  const [tgRecipient, setTgRecipient] = useState<ContactProfile>(DEFAULT_TELEGRAM_RECIPIENT);
+  const [tgSender, setTgSender] = useState<ContactProfile>(DEFAULT_TELEGRAM_SENDER);
+  const [tgTheme, setTgTheme] = useState<ThemeConfig>(TELEGRAM_THEMES.telegram_dark);
+  const [tgWallpaper, setTgWallpaper] = useState<WallpaperConfig>({
+    type: 'solid',
+    opacity: 1,
+    blur: 0,
+    darkness: 0,
+    zoom: 1,
+  });
+
+  // Shared status bar & device frame
   const [statusBar, setStatusBar] = useState<StatusBarConfig>(DEFAULT_STATUS_BAR);
-  const [theme, setTheme] = useState<ThemeConfig>(THEMES.reference_purple);
-  const [wallpaper, setWallpaper] = useState<WallpaperConfig>(DEFAULT_WALLPAPER);
   const [deviceFrame, setDeviceFrame] = useState<DeviceFrameConfig>({
     type: 'galaxy',
     showDeviceBezels: true,
     showNavigationBar: false,
   });
+
+  // Active current platform bindings
+  const messages = platform === 'telegram' ? tgMessages : waMessages;
+  const setMessages = platform === 'telegram' ? setTgMessages : setWaMessages;
+  const recipient = platform === 'telegram' ? tgRecipient : waRecipient;
+  const setRecipient = platform === 'telegram' ? setTgRecipient : setWaRecipient;
+  const sender = platform === 'telegram' ? tgSender : waSender;
+  const setSender = platform === 'telegram' ? setTgSender : setWaSender;
+  const theme = platform === 'telegram' ? tgTheme : waTheme;
+  const setTheme = platform === 'telegram' ? setTgTheme : setWaTheme;
+  const wallpaper = platform === 'telegram' ? tgWallpaper : waWallpaper;
+  const setWallpaper = platform === 'telegram' ? setTgWallpaper : setWaWallpaper;
 
   // UI & Viewport States
   const [zoom, setZoom] = useState<number>(0.95);
@@ -45,8 +80,8 @@ export default function App() {
   const [modalDefaultSender, setModalDefaultSender] = useState<'user' | 'recipient'>('user');
   const [isFullscreenPreviewOpen, setIsFullscreenPreviewOpen] = useState<boolean>(false);
 
-  // Reference uploaded image path
   const referenceImageSrc = '/Screenshot_20261001-174600_WhatsAppBusiness.jpg';
+  const telegramReferenceImageSrc = '/Screenshot_20261001-183044_Telegram.jpg';
 
   const phoneCanvasRef = useRef<HTMLDivElement>(null);
 
@@ -57,18 +92,27 @@ export default function App() {
     }, 3000);
   };
 
-  // Restore exact reference screenshot state
+  // Restore WhatsApp Reference Preset
   const handleLoadReferencePreset = () => {
-    setMessages(REFERENCE_MESSAGES);
-    setRecipient(DEFAULT_RECIPIENT);
-    setSender(DEFAULT_SENDER);
-    setStatusBar(DEFAULT_STATUS_BAR);
-    setTheme(THEMES.reference_purple);
-    setWallpaper(DEFAULT_WALLPAPER);
-    showToast('✨ Restored Reference Screenshot Preset!');
+    setPlatform('whatsapp');
+    setWaMessages(REFERENCE_MESSAGES);
+    setWaRecipient(DEFAULT_RECIPIENT);
+    setWaSender(DEFAULT_SENDER);
+    setWaTheme(THEMES.reference_purple);
+    setWaWallpaper(DEFAULT_WALLPAPER);
+    showToast('✨ Restored WhatsApp Velvet Purple Preset!');
   };
 
-  // Open modal for editing or adding
+  // Restore Telegram Reference Preset
+  const handleLoadTelegramReferencePreset = () => {
+    setPlatform('telegram');
+    setTgMessages(TELEGRAM_REFERENCE_MESSAGES);
+    setTgRecipient(DEFAULT_TELEGRAM_RECIPIENT);
+    setTgSender(DEFAULT_TELEGRAM_SENDER);
+    setTgTheme(TELEGRAM_THEMES.telegram_dark);
+    showToast('✈️ Restored Telegram Nancy B Preset!');
+  };
+
   const handleOpenMessageModal = (
     message?: ChatMessage,
     defaultSender: 'user' | 'recipient' = 'user'
@@ -109,7 +153,6 @@ export default function App() {
     );
   };
 
-  // Direct typing in phone input bar
   const handleQuickSendMessage = (text: string, senderType: 'user' | 'recipient' = 'user') => {
     const now = new Date();
     const hours = now.getHours() % 12 || 12;
@@ -123,27 +166,26 @@ export default function App() {
       text,
       time: `${hours}:${mins} ${ampm}`,
       status: senderType === 'user' ? 'read' : 'none',
+      bubbleColor: platform === 'telegram' && senderType === 'user' ? '#8a47bb' : undefined,
     };
 
     setMessages([...messages, newMsg]);
   };
 
-  // Export Screenshot Handler
   const handleExportScreenshot = async (options: ExportOptions) => {
     if (!phoneCanvasRef.current) return;
     try {
       setIsExporting(true);
       await exportElementAsImage(phoneCanvasRef.current, options);
-      showToast(`🎉 Screenshot exported in ${options.scale}x resolution!`);
+      showToast(`🎉 ${platform === 'telegram' ? 'Telegram' : 'WhatsApp'} screenshot exported successfully!`);
     } catch (err) {
       console.error(err);
-      showToast('⚠️ Failed to export image. Please try again.');
+      showToast('⚠️ Failed to export image.');
     } finally {
       setIsExporting(false);
     }
   };
 
-  // Copy to clipboard
   const handleCopyClipboard = async () => {
     if (!phoneCanvasRef.current) return;
     try {
@@ -152,7 +194,7 @@ export default function App() {
       if (success) {
         showToast('📋 Screenshot copied to clipboard!');
       } else {
-        showToast('⚠️ Could not copy image directly to clipboard.');
+        showToast('⚠️ Could not copy image.');
       }
     } catch (err) {
       console.error(err);
@@ -162,17 +204,16 @@ export default function App() {
     }
   };
 
-  // Dark mode toggle between Reference Dark and Light mode
   const handleToggleDarkMode = () => {
-    if (theme.isDarkMode) {
-      setTheme(THEMES.whatsapp_light);
+    if (platform === 'whatsapp') {
+      setWaTheme(waTheme.isDarkMode ? THEMES.whatsapp_light : THEMES.reference_purple);
     } else {
-      setTheme(THEMES.reference_purple);
+      setTgTheme(tgTheme.name.includes('Day') ? TELEGRAM_THEMES.telegram_dark : TELEGRAM_THEMES.telegram_day);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb-16 sm:pb-0">
       {/* Top Navigation Bar */}
       <TopNav
         onExport={handleExportScreenshot}
@@ -188,9 +229,11 @@ export default function App() {
 
       {/* Main Workspace Layout */}
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* Left Side: Drag-and-Drop & Customization Control Panel */}
+        {/* Left Side: Control Panel */}
         <section className="w-full lg:w-[460px] xl:w-[500px] h-[480px] lg:h-[calc(100vh-64px)] p-3 lg:p-4 border-r border-slate-800 shrink-0">
           <ControlPanel
+            platform={platform}
+            setPlatform={setPlatform}
             messages={messages}
             setMessages={setMessages}
             recipient={recipient}
@@ -207,13 +250,14 @@ export default function App() {
             setDeviceFrame={setDeviceFrame}
             onOpenMessageModal={handleOpenMessageModal}
             onLoadReferencePreset={handleLoadReferencePreset}
+            onLoadTelegramReferencePreset={handleLoadTelegramReferencePreset}
             referenceImageUrl={referenceImageSrc}
+            telegramReferenceImageUrl={telegramReferenceImageSrc}
           />
         </section>
 
-        {/* Right Side: Interactive Live Phone Canvas Workspace */}
+        {/* Right Side: Interactive Live Phone Canvas */}
         <section className="flex-1 h-[calc(100vh-64px)] overflow-auto bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:20px_20px] bg-slate-950 flex flex-col items-center justify-start p-4 sm:p-6 lg:p-8">
-          {/* Quick Toolbar above Phone */}
           <div className="mb-4 flex flex-wrap items-center justify-center gap-2 bg-slate-900/90 backdrop-blur-sm px-4 py-2 rounded-2xl border border-slate-800 shadow-md">
             <span className="text-xs text-slate-400 font-medium">Device Frame:</span>
             <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl">
@@ -245,18 +289,19 @@ export default function App() {
 
             <div className="w-[1px] h-4 bg-slate-800 mx-1 hidden sm:block" />
 
-            {/* Quick Add Buttons on canvas */}
             <button
               type="button"
               onClick={() => handleOpenMessageModal(undefined, 'user')}
-              className="px-3 py-1 bg-purple-950/60 hover:bg-purple-900/80 text-purple-300 border border-purple-800/40 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1"
+              className={`px-3 py-1 rounded-xl text-xs font-semibold text-white shadow-sm transition-colors ${
+                platform === 'telegram' ? 'bg-[#2a8ee4] hover:bg-[#237fcb]' : 'bg-purple-700 hover:bg-purple-600'
+              }`}
             >
               <span>+ Outgoing</span>
             </button>
             <button
               type="button"
               onClick={() => handleOpenMessageModal(undefined, 'recipient')}
-              className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1"
+              className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition-colors"
             >
               <span>+ Incoming</span>
             </button>
@@ -269,7 +314,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* Render Interactive Phone Preview */}
           <PhonePreview
             ref={phoneCanvasRef}
             messages={messages}
@@ -279,20 +323,23 @@ export default function App() {
             theme={theme}
             wallpaper={wallpaper}
             deviceFrame={deviceFrame}
+            platform={platform}
             zoom={zoom}
             onEditMessage={handleOpenMessageModal}
             onDeleteMessage={handleDeleteMessage}
             onToggleSender={handleToggleSender}
             onSendMessage={handleQuickSendMessage}
-            onHeaderAvatarClick={() => {
-              showToast('Edit Recipient Avatar in Profiles Tab');
-            }}
-            onHeaderNameClick={() => {
-              showToast('Edit Recipient Name in Profiles Tab');
-            }}
           />
         </section>
       </main>
+
+      {/* Bottom Navigation Bar to separate WhatsApp and Telegram */}
+      <BottomNavBar
+        platform={platform}
+        setPlatform={setPlatform}
+        whatsappMessageCount={waMessages.length}
+        telegramMessageCount={tgMessages.length}
+      />
 
       {/* Message Creator / Editor Modal */}
       <MessageEditorModal
@@ -304,6 +351,7 @@ export default function App() {
         onSave={handleSaveMessage}
         editingMessage={editingMessage}
         defaultSender={modalDefaultSender}
+        platform={platform}
       />
 
       {/* Fullscreen & Comparison Preview Modal */}
@@ -317,13 +365,14 @@ export default function App() {
         theme={theme}
         wallpaper={wallpaper}
         deviceFrame={deviceFrame}
+        platform={platform}
         onSendMessage={handleQuickSendMessage}
-        referenceImageUrl={referenceImageSrc}
+        referenceImageUrl={platform === 'telegram' ? telegramReferenceImageSrc : referenceImageSrc}
       />
 
-      {/* Floating Toast Notification */}
+      {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 text-white px-4 py-2.5 rounded-2xl border border-slate-700 shadow-2xl text-xs font-semibold flex items-center gap-2 animate-slideUp">
+        <div className="fixed bottom-16 sm:bottom-6 right-6 z-50 bg-slate-900/95 text-white px-4 py-2.5 rounded-2xl border border-slate-700 shadow-2xl text-xs font-semibold flex items-center gap-2 animate-slideUp">
           <span>{toastMessage}</span>
         </div>
       )}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  AppPlatform,
   ChatMessage,
   ContactProfile,
   DeviceFrameConfig,
@@ -7,9 +8,16 @@ import {
   ThemeConfig,
   WallpaperConfig,
 } from '../types/chat';
-import { ASSETS, THEMES, OTHER_PRESETS } from '../constants/presets';
+import {
+  ASSETS,
+  THEMES,
+  TELEGRAM_THEMES,
+  OTHER_PRESETS,
+} from '../constants/presets';
 
 interface ControlPanelProps {
+  platform: AppPlatform;
+  setPlatform: (platform: AppPlatform) => void;
   messages: ChatMessage[];
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   recipient: ContactProfile;
@@ -26,10 +34,14 @@ interface ControlPanelProps {
   setDeviceFrame: React.Dispatch<React.SetStateAction<DeviceFrameConfig>>;
   onOpenMessageModal: (message?: ChatMessage, defaultSender?: 'user' | 'recipient') => void;
   onLoadReferencePreset: () => void;
+  onLoadTelegramReferencePreset: () => void;
   referenceImageUrl?: string;
+  telegramReferenceImageUrl?: string;
 }
 
 export const ControlPanel: React.FC<ControlPanelProps> = ({
+  platform,
+  setPlatform,
   messages,
   setMessages,
   recipient,
@@ -46,7 +58,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   setDeviceFrame,
   onOpenMessageModal,
   onLoadReferencePreset,
-  referenceImageUrl,
+  onLoadTelegramReferencePreset,
 }) => {
   const [activeTab, setActiveTab] = useState<
     'messages' | 'profiles' | 'status' | 'theme' | 'compare'
@@ -113,7 +125,12 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   const handleToggleMessageSender = (id: string) => {
     setMessages(
       messages.map((m) => {
-        if (m.id === id && m.type !== 'date_divider' && m.type !== 'system_notice') {
+        if (
+          m.id === id &&
+          m.type !== 'date_divider' &&
+          m.type !== 'system_notice' &&
+          m.type !== 'telegram_join'
+        ) {
           return {
             ...m,
             sender: m.sender === 'user' ? 'recipient' : 'user',
@@ -125,8 +142,49 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     );
   };
 
+  const currentThemeList = platform === 'telegram' ? TELEGRAM_THEMES : THEMES;
+
   return (
     <div className="flex flex-col h-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      {/* Platform Switcher Header */}
+      <div className="p-2.5 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span
+            className={`w-2.5 h-2.5 rounded-full ${
+              platform === 'whatsapp' ? 'bg-emerald-500' : 'bg-[#2a8ee4]'
+            }`}
+          />
+          <span className="text-xs font-bold uppercase tracking-wider text-white">
+            {platform === 'whatsapp' ? 'WhatsApp Mode' : 'Telegram Mode'}
+          </span>
+        </div>
+
+        <div className="flex bg-slate-900 rounded-xl p-0.5 border border-slate-800">
+          <button
+            type="button"
+            onClick={() => setPlatform('whatsapp')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+              platform === 'whatsapp'
+                ? 'bg-emerald-600 text-white shadow'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            WhatsApp
+          </button>
+          <button
+            type="button"
+            onClick={() => setPlatform('telegram')}
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
+              platform === 'telegram'
+                ? 'bg-[#2a8ee4] text-white shadow'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Telegram
+          </button>
+        </div>
+      </div>
+
       {/* Navigation Tab Bar */}
       <div className="flex items-center gap-1 p-2 bg-slate-950 border-b border-slate-800 overflow-x-auto scrollbar-none">
         {[
@@ -168,7 +226,11 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenMessageModal(undefined, 'user')}
-                className="flex-1 py-2 px-3 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-98"
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-white shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-98 ${
+                  platform === 'telegram'
+                    ? 'bg-[#2a8ee4] hover:bg-[#257dc8]'
+                    : 'bg-emerald-600 hover:bg-emerald-500'
+                }`}
               >
                 <span>+ Add Outgoing (You)</span>
               </button>
@@ -228,14 +290,20 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                       onClick={() => handleToggleMessageSender(msg.id)}
                       title="Click to flip sender (Left <-> Right)"
                       className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider shrink-0 transition-colors ${
-                        msg.type === 'date_divider'
+                        msg.type === 'date_divider' || msg.type === 'telegram_join'
                           ? 'bg-slate-800 text-slate-400'
                           : isUser
                           ? 'bg-purple-600/30 text-purple-300 border border-purple-500/30'
                           : 'bg-slate-800 text-slate-300 border border-slate-700'
                       }`}
                     >
-                      {msg.type === 'date_divider' ? 'Date' : isUser ? 'You ⇄' : 'Them ⇄'}
+                      {msg.type === 'date_divider'
+                        ? 'Date'
+                        : msg.type === 'telegram_join'
+                        ? 'Join'
+                        : isUser
+                        ? 'You ⇄'
+                        : 'Them ⇄'}
                     </button>
 
                     {/* Message Preview Text */}
@@ -246,6 +314,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                       <div className="text-xs text-white truncate font-medium">
                         {msg.type === 'text' && msg.text}
                         {msg.type === 'voice_note' && `🎙️ Voice Note (${msg.duration})`}
+                        {msg.type === 'telegram_join' && `🚀 ${msg.text}`}
                         {msg.type === 'channel_invite' && `📣 ${msg.channelName}`}
                         {msg.type === 'image' && `🖼️ Photo (${msg.caption || 'Image'})`}
                         {msg.type === 'document' && `📄 File (${msg.fileName})`}
@@ -255,10 +324,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                       <div className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                         {msg.time && <span>{msg.time}</span>}
                         {isUser && msg.status && <span>· {msg.status}</span>}
+                        {msg.bubbleColor && (
+                          <span
+                            className="w-2 h-2 rounded-full inline-block"
+                            style={{ backgroundColor: msg.bubbleColor }}
+                          />
+                        )}
                       </div>
                     </div>
 
-                    {/* Action buttons (Up, Down, Edit, Duplicate, Delete) */}
+                    {/* Action buttons */}
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         type="button"
@@ -315,10 +390,9 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         {/* ========================================================================= */}
         {activeTab === 'profiles' && (
           <div className="space-y-4">
-            {/* Recipient Card */}
             <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
               <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider block">
-                Recipient Contact (Them)
+                Recipient Contact ({platform === 'telegram' ? 'Telegram' : 'WhatsApp'})
               </span>
 
               <div>
@@ -329,23 +403,35 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   type="text"
                   value={recipient.name}
                   onChange={(e) => setRecipient({ ...recipient, name: e.target.value })}
-                  placeholder="ℬoss Sunny 😈"
+                  placeholder={platform === 'telegram' ? 'Nancy B' : 'ℬoss Sunny 😈'}
                   className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:border-emerald-500 outline-none"
                 />
               </div>
 
-              {/* Font Style for Name */}
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1">
+                  Status Subtitle
+                </label>
+                <input
+                  type="text"
+                  value={recipient.statusText}
+                  onChange={(e) => setRecipient({ ...recipient, statusText: e.target.value })}
+                  placeholder="last seen recently / online / typing..."
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:border-emerald-500 outline-none"
+                />
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1">
                   Name Typography Style
                 </label>
                 <div className="grid grid-cols-3 gap-1.5">
                   {[
-                    { id: 'cursive', label: 'Dancing Script', sample: 'ℬoss Sunny' },
-                    { id: 'caveat', label: 'Caveat', sample: 'Boss Sunny' },
-                    { id: 'kalam', label: 'Kalam', sample: 'Boss Sunny' },
-                    { id: 'roboto', label: 'Roboto', sample: 'Boss Sunny' },
-                    { id: 'default', label: 'Jakarta Sans', sample: 'Boss Sunny' },
+                    { id: 'roboto', label: 'Roboto (TG Default)' },
+                    { id: 'cursive', label: 'Dancing Script' },
+                    { id: 'caveat', label: 'Caveat' },
+                    { id: 'kalam', label: 'Kalam' },
+                    { id: 'default', label: 'Jakarta Sans' },
                   ].map((font) => (
                     <button
                       key={font.id}
@@ -363,7 +449,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 </div>
               </div>
 
-              {/* Recipient Avatar */}
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1">
                   Profile Picture
@@ -371,7 +456,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0">
                     <img
-                      src={recipient.avatarUrl}
+                      src={recipient.avatarUrl || ASSETS.nancyAvatar}
                       alt="Avatar"
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
@@ -385,7 +470,16 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                       placeholder="Image URL"
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 text-white text-xs outline-none"
                     />
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setRecipient({ ...recipient, avatarUrl: ASSETS.nancyAvatar })
+                        }
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px]"
+                      >
+                        👩 Nancy B Preset
+                      </button>
                       <button
                         type="button"
                         onClick={() =>
@@ -395,121 +489,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                       >
                         ⚠️ Warning Sign Preset
                       </button>
-                      <label className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] cursor-pointer">
-                        Upload File
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (ev) => {
-                                if (ev.target?.result) {
-                                  setRecipient({
-                                    ...recipient,
-                                    avatarUrl: ev.target.result as string,
-                                  });
-                                }
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Status & Business Badges */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <label className="flex items-center gap-2 p-2 rounded-lg bg-slate-900 border border-slate-800 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={recipient.isBusiness}
-                    onChange={(e) =>
-                      setRecipient({ ...recipient, isBusiness: e.target.checked })
-                    }
-                    className="accent-emerald-500 rounded"
-                  />
-                  <span className="text-xs text-slate-300">WhatsApp Business</span>
-                </label>
-
-                <label className="flex items-center gap-2 p-2 rounded-lg bg-slate-900 border border-slate-800 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={recipient.isOnline}
-                    onChange={(e) =>
-                      setRecipient({ ...recipient, isOnline: e.target.checked })
-                    }
-                    className="accent-emerald-500 rounded"
-                  />
-                  <span className="text-xs text-slate-300">Online Green Dot</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Sender (You) Card */}
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-purple-400 uppercase tracking-wider block">
-                Sender Profile (You)
-              </span>
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
-                  Voice Note Avatar Badge
-                </label>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-800 border border-slate-700 shrink-0">
-                    <img
-                      src={sender.avatarUrl}
-                      alt="Avatar"
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                  <div className="flex-1 space-y-1.5">
-                    <input
-                      type="text"
-                      value={sender.avatarUrl}
-                      onChange={(e) => setSender({ ...sender, avatarUrl: e.target.value })}
-                      placeholder="Image URL"
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 text-white text-xs outline-none"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSender({ ...sender, avatarUrl: ASSETS.purpleMicBadge })
-                        }
-                        className="px-2.5 py-1 bg-purple-900/40 hover:bg-purple-900/60 text-purple-300 rounded-lg text-[11px]"
-                      >
-                        🎙️ Neon Mic Badge
-                      </button>
-                      <label className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] cursor-pointer">
-                        Upload
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (ev) => {
-                                if (ev.target?.result) {
-                                  setSender({
-                                    ...sender,
-                                    avatarUrl: ev.target.result as string,
-                                  });
-                                }
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                      </label>
                     </div>
                   </div>
                 </div>
@@ -541,7 +520,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 </label>
               </div>
 
-              {/* Time */}
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1">
                   Status Bar Clock Time
@@ -555,7 +533,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 />
               </div>
 
-              {/* Battery Level */}
               <div>
                 <div className="flex justify-between text-xs text-slate-400 mb-1">
                   <span>Battery Level</span>
@@ -571,109 +548,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   }
                   className="w-full accent-emerald-500"
                 />
-                <label className="flex items-center gap-2 mt-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={statusBar.isCharging}
-                    onChange={(e) =>
-                      setStatusBar({ ...statusBar, isCharging: e.target.checked })
-                    }
-                    className="accent-emerald-500 rounded"
-                  />
-                  <span className="text-xs text-slate-300">Charging (Lightning bolt)</span>
-                </label>
-              </div>
-
-              {/* Network Signal & Badge */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
-                    Cellular Signal Bars ({statusBar.signalStrength}/4)
-                  </label>
-                  <input
-                    type="range"
-                    min={0}
-                    max={4}
-                    value={statusBar.signalStrength}
-                    onChange={(e) =>
-                      setStatusBar({ ...statusBar, signalStrength: Number(e.target.value) })
-                    }
-                    className="w-full accent-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1">
-                    Network Badge
-                  </label>
-                  <select
-                    value={statusBar.networkType}
-                    onChange={(e) =>
-                      setStatusBar({ ...statusBar, networkType: e.target.value as any })
-                    }
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs outline-none"
-                  >
-                    <option value="5G">5G</option>
-                    <option value="4G">4G</option>
-                    <option value="LTE">LTE</option>
-                    <option value="VoLTE">VoLTE</option>
-                    <option value="none">Hidden</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* WiFi */}
-              <div>
-                <label className="block text-xs font-medium text-slate-400 mb-1">
-                  Wi-Fi Signal Strength ({statusBar.wifiStrength}/4)
-                </label>
-                <input
-                  type="range"
-                  min={0}
-                  max={4}
-                  value={statusBar.wifiStrength}
-                  onChange={(e) =>
-                    setStatusBar({ ...statusBar, wifiStrength: Number(e.target.value) })
-                  }
-                  className="w-full accent-emerald-500"
-                />
-              </div>
-
-              {/* Extra Icons */}
-              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800">
-                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={statusBar.showAlarm}
-                    onChange={(e) =>
-                      setStatusBar({ ...statusBar, showAlarm: e.target.checked })
-                    }
-                    className="accent-emerald-500 rounded"
-                  />
-                  <span>Alarm</span>
-                </label>
-                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={statusBar.showLocation}
-                    onChange={(e) =>
-                      setStatusBar({ ...statusBar, showLocation: e.target.checked })
-                    }
-                    className="accent-emerald-500 rounded"
-                  />
-                  <span>GPS</span>
-                </label>
-                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
-                  <input
-                    type="checkbox"
-                    checked={statusBar.showBluetooth}
-                    onChange={(e) =>
-                      setStatusBar({ ...statusBar, showBluetooth: e.target.checked })
-                    }
-                    className="accent-emerald-500 rounded"
-                  />
-                  <span>Bluetooth</span>
-                </label>
               </div>
             </div>
           </div>
@@ -684,19 +558,18 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         {/* ========================================================================= */}
         {activeTab === 'theme' && (
           <div className="space-y-4">
-            {/* Theme Presets */}
             <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
               <span className="text-xs font-bold text-white uppercase tracking-wider block">
-                Color Themes
+                {platform === 'telegram' ? 'Telegram Themes' : 'WhatsApp Themes'}
               </span>
               <div className="grid grid-cols-2 gap-2">
-                {Object.values(THEMES).map((th) => (
+                {Object.values(currentThemeList).map((th) => (
                   <button
-                    key={th.preset}
+                    key={th.preset + th.name}
                     type="button"
                     onClick={() => setTheme(th)}
                     className={`p-2.5 rounded-xl border text-left transition-all ${
-                      theme.preset === th.preset
+                      theme.name === th.name
                         ? 'border-emerald-500 bg-emerald-950/30 ring-1 ring-emerald-500/30'
                         : 'border-slate-800 bg-slate-900 hover:border-slate-700'
                     }`}
@@ -718,195 +591,6 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 ))}
               </div>
             </div>
-
-            {/* Custom Color Overrides */}
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-white uppercase tracking-wider block">
-                Custom Bubble & Accent Colors
-              </span>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div>
-                  <label className="block text-slate-400 mb-1">Outgoing Bubble</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={theme.outgoingBubbleBg}
-                      onChange={(e) =>
-                        setTheme({ ...theme, outgoingBubbleBg: e.target.value, preset: 'custom' })
-                      }
-                      className="w-8 h-8 rounded border-none bg-transparent cursor-pointer"
-                    />
-                    <span className="font-mono text-slate-300">{theme.outgoingBubbleBg}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 mb-1">Incoming Bubble</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={theme.incomingBubbleBg}
-                      onChange={(e) =>
-                        setTheme({ ...theme, incomingBubbleBg: e.target.value, preset: 'custom' })
-                      }
-                      className="w-8 h-8 rounded border-none bg-transparent cursor-pointer"
-                    />
-                    <span className="font-mono text-slate-300">{theme.incomingBubbleBg}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 mb-1">Top Header</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={theme.headerBg}
-                      onChange={(e) =>
-                        setTheme({ ...theme, headerBg: e.target.value, preset: 'custom' })
-                      }
-                      className="w-8 h-8 rounded border-none bg-transparent cursor-pointer"
-                    />
-                    <span className="font-mono text-slate-300">{theme.headerBg}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 mb-1">Accent (Mic / Send)</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={theme.accentColor}
-                      onChange={(e) =>
-                        setTheme({ ...theme, accentColor: e.target.value, preset: 'custom' })
-                      }
-                      className="w-8 h-8 rounded border-none bg-transparent cursor-pointer"
-                    />
-                    <span className="font-mono text-slate-300">{theme.accentColor}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Wallpaper Controls */}
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-white uppercase tracking-wider block">
-                Chat Wallpaper
-              </span>
-
-              {/* Wallpaper Presets */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setWallpaper({
-                      ...wallpaper,
-                      imageUrl: ASSETS.wallpaper,
-                      opacity: 0.85,
-                      darkness: 0.35,
-                    })
-                  }
-                  className="p-2 rounded-xl border border-purple-800/40 bg-purple-950/20 hover:border-purple-600 flex items-center gap-2 text-xs text-left"
-                >
-                  <img src={ASSETS.wallpaper} alt="" className="w-8 h-12 object-cover rounded" />
-                  <div>
-                    <span className="font-semibold text-white block">Romantic Roses</span>
-                    <span className="text-[10px] text-purple-300">Screenshot match</span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setWallpaper({
-                      ...wallpaper,
-                      imageUrl: '',
-                      darkness: 0,
-                    })
-                  }
-                  className="p-2 rounded-xl border border-slate-800 bg-slate-900 hover:border-slate-700 flex items-center justify-center text-xs text-slate-300"
-                >
-                  None (Solid Color)
-                </button>
-              </div>
-
-              {/* Custom Wallpaper Upload */}
-              <div className="space-y-2 pt-2">
-                <label className="block text-xs font-medium text-slate-400">
-                  Custom Wallpaper URL / Upload
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={wallpaper.imageUrl || ''}
-                    onChange={(e) => setWallpaper({ ...wallpaper, imageUrl: e.target.value })}
-                    placeholder="https://..."
-                    className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white text-xs outline-none"
-                  />
-                  <label className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-medium cursor-pointer transition-colors shrink-0">
-                    Upload
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (ev) => {
-                            if (ev.target?.result) {
-                              setWallpaper({
-                                ...wallpaper,
-                                imageUrl: ev.target.result as string,
-                              });
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {/* Darkness Dimmer & Blur */}
-              <div className="space-y-3 pt-2">
-                <div>
-                  <div className="flex justify-between text-xs text-slate-400 mb-1">
-                    <span>Wallpaper Dimming / Darkness</span>
-                    <span className="text-white font-mono">
-                      {Math.round(wallpaper.darkness * 100)}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.05}
-                    value={wallpaper.darkness}
-                    onChange={(e) =>
-                      setWallpaper({ ...wallpaper, darkness: Number(e.target.value) })
-                    }
-                    className="w-full accent-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-xs text-slate-400 mb-1">
-                    <span>Background Blur</span>
-                    <span className="text-white font-mono">{wallpaper.blur}px</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={15}
-                    step={1}
-                    value={wallpaper.blur}
-                    onChange={(e) => setWallpaper({ ...wallpaper, blur: Number(e.target.value) })}
-                    className="w-full accent-emerald-500"
-                  />
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
@@ -915,95 +599,46 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         {/* ========================================================================= */}
         {activeTab === 'compare' && (
           <div className="space-y-4">
-            {/* 1-Click Reference Loader */}
+            <div className="p-4 rounded-xl bg-gradient-to-br from-sky-950/40 via-slate-950 to-slate-900 border border-sky-800/40 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-white">
+                  Telegram Reference Matcher (Nancy B)
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 text-[10px] font-semibold">
+                  1-Click Match
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Instantly load Nancy B Telegram chat with "Nancy B joined Telegram!", AMOLED pure black background, purple & cyan-blue message bubbles, and date capsules!
+              </p>
+              <button
+                type="button"
+                onClick={onLoadTelegramReferencePreset}
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-[#2a8ee4] hover:bg-[#237fcb] text-white shadow-lg transition-all active:scale-98 flex items-center justify-center gap-2"
+              >
+                <span>✈️ Restore Telegram Screenshot State</span>
+              </button>
+            </div>
+
             <div className="p-4 rounded-xl bg-gradient-to-br from-purple-950/40 via-slate-950 to-slate-900 border border-purple-800/40 space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-white">
-                  Uploaded Reference Matcher
+                  WhatsApp Reference Matcher (Boss Sunny)
                 </span>
                 <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-semibold">
                   1-Click Match
                 </span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Instantly load the exact 14 chat messages, voice notes, channel invite card,
-                custom velvet purple theme, timestamps, and wallpaper matching your reference screenshot!
+                Restore the WhatsApp Business Velvet Purple screenshot with voice notes, waveforms, and channel admin invite card.
               </p>
               <button
                 type="button"
                 onClick={onLoadReferencePreset}
                 className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white shadow-lg transition-all active:scale-98 flex items-center justify-center gap-2"
               >
-                <span>⚡ Restore Reference Screenshot State</span>
+                <span>⚡ Restore WhatsApp Screenshot State</span>
               </button>
-            </div>
-
-            {/* Additional Conversation Presets */}
-            <div className="space-y-2">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
-                Other Conversation Templates
-              </span>
-              {OTHER_PRESETS.map((pst) => (
-                <div
-                  key={pst.id}
-                  className="p-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition-colors flex items-center justify-between gap-3"
-                >
-                  <div className="min-w-0">
-                    <span className="text-xs font-bold text-white block truncate">
-                      {pst.title}
-                    </span>
-                    <span className="text-[11px] text-slate-400 block truncate">
-                      {pst.description}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRecipient(pst.recipient);
-                      setMessages(pst.messages as any);
-                      if (THEMES[pst.theme]) {
-                        setTheme(THEMES[pst.theme]);
-                      }
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-emerald-400 shrink-0 transition-colors"
-                  >
-                    Load
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {/* Device Frame Toggle */}
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-              <span className="text-xs font-bold text-white uppercase tracking-wider block">
-                Device Mockup Frame
-              </span>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { id: 'galaxy', label: 'Samsung S25' },
-                  { id: 'iphone', label: 'iPhone 16 Pro' },
-                  { id: 'frameless', label: 'Clean Frameless' },
-                ].map((df) => (
-                  <button
-                    key={df.id}
-                    type="button"
-                    onClick={() =>
-                      setDeviceFrame({
-                        ...deviceFrame,
-                        type: df.id as any,
-                        showDeviceBezels: df.id !== 'frameless',
-                      })
-                    }
-                    className={`py-2 px-2 rounded-xl border text-xs font-medium transition-colors ${
-                      deviceFrame.type === df.id
-                        ? 'border-emerald-500 bg-emerald-950/40 text-emerald-200'
-                        : 'border-slate-800 bg-slate-900 text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    {df.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         )}

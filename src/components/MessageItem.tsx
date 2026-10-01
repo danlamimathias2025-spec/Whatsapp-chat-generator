@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { ChatMessage, ContactProfile, ThemeConfig } from '../types/chat';
+import { AppPlatform, ChatMessage, ContactProfile, ThemeConfig } from '../types/chat';
 import { ReadReceiptIcon } from './ReadReceiptIcon';
 import { AudioWaveform } from './AudioWaveform';
+import { ASSETS } from '../constants/presets';
 
 interface MessageItemProps {
   message: ChatMessage;
   theme: ThemeConfig;
   recipient: ContactProfile;
   sender: ContactProfile;
+  platform?: AppPlatform;
   onEdit?: (message: ChatMessage) => void;
   onDelete?: (id: string) => void;
   onToggleSender?: (id: string) => void;
@@ -19,6 +21,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   theme,
   recipient,
   sender,
+  platform = 'whatsapp',
   onEdit,
   onDelete,
   onToggleSender,
@@ -32,15 +35,34 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   // Date Divider render
   if (message.type === 'date_divider') {
     return (
-      <div className="flex justify-center my-2.5 select-none">
+      <div className="flex justify-center my-2 select-none">
         <span
-          className="px-3 py-1 rounded-md text-[11px] font-medium tracking-tight shadow-sm"
-          style={{
-            backgroundColor: theme.isDarkMode ? '#1e2428' : '#e1f2fb',
-            color: theme.isDarkMode ? '#8696a0' : '#54656f',
-          }}
+          className={`px-3.5 py-1 rounded-full text-[11.5px] font-medium tracking-tight shadow-sm ${
+            platform === 'telegram'
+              ? 'bg-[#181818]/90 text-slate-200 backdrop-blur-sm border border-white/5'
+              : ''
+          }`}
+          style={
+            platform === 'whatsapp'
+              ? {
+                  backgroundColor: theme.isDarkMode ? '#1e2428' : '#e1f2fb',
+                  color: theme.isDarkMode ? '#8696a0' : '#54656f',
+                }
+              : undefined
+          }
         >
           {message.text || 'Today'}
+        </span>
+      </div>
+    );
+  }
+
+  // Telegram Join Service Pill
+  if (message.type === 'telegram_join') {
+    return (
+      <div className="flex justify-center my-2 select-none">
+        <span className="px-4 py-1.5 rounded-full text-[12px] font-medium tracking-tight bg-[#181818]/90 text-slate-200 border border-white/5 shadow-sm">
+          {message.text || `${recipient.name} joined Telegram!`}
         </span>
       </div>
     );
@@ -66,21 +88,24 @@ export const MessageItem: React.FC<MessageItemProps> = ({
     );
   }
 
-  const bubbleBg = isOutgoing ? theme.outgoingBubbleBg : theme.incomingBubbleBg;
+  // Dynamic bubble colors with per-message color override support
+  const bubbleBg = isOutgoing
+    ? message.bubbleColor || theme.outgoingBubbleBg
+    : theme.incomingBubbleBg;
   const textColor = isOutgoing ? theme.outgoingTextColor : theme.incomingTextColor;
   const timeColor = isOutgoing ? theme.outgoingTimeColor : theme.incomingTimeColor;
 
   const getFontClass = () => {
     if (theme.fontFamily === 'cursive') {
-      return 'font-["Caveat",cursive] text-[17px] leading-tight';
+      return 'font-["Caveat",cursive] text-[18px] leading-tight';
     }
     if (theme.fontFamily === 'script') {
       return 'font-["Dancing_Script",cursive] text-[16px]';
     }
     if (theme.fontFamily === 'kalam') {
-      return 'font-["Kalam",cursive] text-[14px]';
+      return 'font-["Kalam",cursive] text-[15px]';
     }
-    return 'font-normal text-[14px] leading-snug';
+    return 'font-normal text-[14.5px] leading-snug';
   };
 
   return (
@@ -120,40 +145,71 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
       {/* Bubble Container */}
       <div
-        className={`relative max-w-[85%] sm:max-w-[75%] rounded-2xl shadow-[0_1px_1px_rgba(0,0,0,0.18)] transition-all duration-150 ${
-          isOutgoing
-            ? 'rounded-tr-sm pr-3 pl-3 pt-1.5 pb-1.5'
-            : 'rounded-tl-sm pr-3 pl-3 pt-1.5 pb-1.5'
+        className={`relative max-w-[85%] sm:max-w-[75%] shadow-[0_1px_2px_rgba(0,0,0,0.2)] transition-all duration-150 ${
+          platform === 'telegram'
+            ? isOutgoing
+              ? 'rounded-[18px] rounded-br-[4px] px-3.5 py-1.5'
+              : 'rounded-[18px] rounded-bl-[4px] px-3.5 py-1.5'
+            : isOutgoing
+            ? 'rounded-2xl rounded-tr-sm pr-3 pl-3 pt-1.5 pb-1.5'
+            : 'rounded-2xl rounded-tl-sm pr-3 pl-3 pt-1.5 pb-1.5'
         }`}
         style={{
           backgroundColor: bubbleBg,
           color: textColor,
         }}
       >
-        {/* Top tail SVG */}
-        {isOutgoing ? (
-          <svg
-            className="absolute top-0 -right-[7px] w-[8px] h-[14px] pointer-events-none"
-            viewBox="0 0 8 14"
-            fill="none"
-          >
-            <path
-              d="M0 0C2.5 0 7 0 7 0C7 0 7.5 4 4.5 8.5C1.5 13 0 14 0 14V0Z"
-              fill={bubbleBg}
-            />
-          </svg>
-        ) : (
-          <svg
-            className="absolute top-0 -left-[7px] w-[8px] h-[14px] pointer-events-none scale-x-[-1]"
-            viewBox="0 0 8 14"
-            fill="none"
-          >
-            <path
-              d="M0 0C2.5 0 7 0 7 0C7 0 7.5 4 4.5 8.5C1.5 13 0 14 0 14V0Z"
-              fill={bubbleBg}
-            />
-          </svg>
-        )}
+        {/* WhatsApp Top Tail SVG */}
+        {platform === 'whatsapp' &&
+          (isOutgoing ? (
+            <svg
+              className="absolute top-0 -right-[7px] w-[8px] h-[14px] pointer-events-none"
+              viewBox="0 0 8 14"
+              fill="none"
+            >
+              <path
+                d="M0 0C2.5 0 7 0 7 0C7 0 7.5 4 4.5 8.5C1.5 13 0 14 0 14V0Z"
+                fill={bubbleBg}
+              />
+            </svg>
+          ) : (
+            <svg
+              className="absolute top-0 -left-[7px] w-[8px] h-[14px] pointer-events-none scale-x-[-1]"
+              viewBox="0 0 8 14"
+              fill="none"
+            >
+              <path
+                d="M0 0C2.5 0 7 0 7 0C7 0 7.5 4 4.5 8.5C1.5 13 0 14 0 14V0Z"
+                fill={bubbleBg}
+              />
+            </svg>
+          ))}
+
+        {/* Telegram Bottom Tail SVG */}
+        {platform === 'telegram' &&
+          (isOutgoing ? (
+            <svg
+              className="absolute -bottom-[0.5px] -right-[6px] w-[9px] h-[12px] pointer-events-none"
+              viewBox="0 0 9 12"
+              fill="none"
+            >
+              <path
+                d="M0 0C0 4 3 10 9 12C4 12 0 12 0 12V0Z"
+                fill={bubbleBg}
+              />
+            </svg>
+          ) : (
+            <svg
+              className="absolute -bottom-[0.5px] -left-[6px] w-[9px] h-[12px] pointer-events-none scale-x-[-1]"
+              viewBox="0 0 9 12"
+              fill="none"
+            >
+              <path
+                d="M0 0C0 4 3 10 9 12C4 12 0 12 0 12V0Z"
+                fill={bubbleBg}
+              />
+            </svg>
+          ))}
 
         {/* 1. TEXT MESSAGE */}
         {message.type === 'text' && (
@@ -175,30 +231,19 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         {/* 2. VOICE NOTE MESSAGE */}
         {message.type === 'voice_note' && (
           <div className="flex items-center gap-2.5 py-1 min-w-[240px] max-w-full">
-            {/* Outgoing Voice Note Profile Avatar Badge on Left */}
             {isOutgoing && (
               <div className="relative shrink-0">
                 <div className="w-10 h-10 rounded-full p-[1.5px] bg-gradient-to-tr from-fuchsia-500 via-pink-500 to-purple-400 shadow-md flex items-center justify-center overflow-hidden">
                   <img
-                    src={message.avatarBadgeUrl || sender.avatarUrl}
+                    src={message.avatarBadgeUrl || sender.avatarUrl || ASSETS.purpleMicBadge}
                     alt="Mic Badge"
                     className="w-full h-full object-cover rounded-full"
                     referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
                   />
-                </div>
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-purple-600 border border-white/20 flex items-center justify-center text-white">
-                  <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                  </svg>
                 </div>
               </div>
             )}
 
-            {/* Play Button */}
             <button
               type="button"
               onClick={() => setIsPlayingAudio(!isPlayingAudio)}
@@ -220,7 +265,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               )}
             </button>
 
-            {/* Audio Waveform & Duration */}
             <div className="flex-1 flex flex-col justify-center min-w-0">
               <AudioWaveform
                 progress={audioProgress}
@@ -245,7 +289,6 @@ export const MessageItem: React.FC<MessageItemProps> = ({
               </div>
             </div>
 
-            {/* Incoming Voice Note Contact Avatar Badge on Right */}
             {!isOutgoing && (
               <div className="relative shrink-0 ml-1">
                 <div className="w-9 h-9 rounded-full ring-1 ring-white/20 shadow-md overflow-hidden bg-slate-900 flex items-center justify-center">
@@ -254,16 +297,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     alt="Voice Sender"
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
                   />
-                </div>
-                <div className="absolute -bottom-1 -left-1 w-4 h-4 rounded-full bg-cyan-600 border border-white/20 flex items-center justify-center text-white">
-                  <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                  </svg>
                 </div>
               </div>
             )}
@@ -273,16 +307,13 @@ export const MessageItem: React.FC<MessageItemProps> = ({
         {/* 3. CHANNEL ADMIN INVITE CARD */}
         {message.type === 'channel_invite' && (
           <div className="flex flex-col gap-2 p-1 min-w-[260px] sm:min-w-[300px]">
-            {/* Header with App Logo & Title */}
             <div className="flex items-center gap-3">
-              {/* PalmPay / App Icon Circle */}
               <div className="w-12 h-12 rounded-full bg-white text-purple-900 flex flex-col items-center justify-center shadow-inner shrink-0 p-1">
                 <svg className="w-5 h-5 text-purple-700" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                 </svg>
                 <span className="text-[8px] font-bold tracking-tighter text-slate-800">palmpay</span>
               </div>
-
               <div className="flex flex-col min-w-0">
                 <span className="font-bold text-[14px] text-white tracking-wide truncate">
                   {message.channelName || 'LEGIT 🤑 UPDATES ✅✅✅'}
@@ -292,18 +323,12 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 </span>
               </div>
             </div>
-
-            {/* Status pill badge (e.g. Invite accepted) */}
             <div className="w-full py-1.5 px-3 rounded-lg bg-black/25 backdrop-blur-sm text-white/90 text-xs font-medium italic">
               {message.statusBadge || 'Invite accepted'}
             </div>
-
-            {/* Description text */}
             <p className="text-[12.5px] italic text-white/95 leading-snug">
               {message.description}
             </p>
-
-            {/* Timestamp & status */}
             <div className="flex items-center justify-end gap-1 pt-1 select-none">
               <span className="text-[10.5px] tracking-tight" style={{ color: timeColor }}>
                 {message.time}

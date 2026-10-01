@@ -8,6 +8,7 @@ interface MessageEditorModalProps {
   onSave: (message: ChatMessage) => void;
   editingMessage?: ChatMessage | null;
   defaultSender?: 'user' | 'recipient';
+  platform?: 'whatsapp' | 'telegram';
 }
 
 export const MessageEditorModal: React.FC<MessageEditorModalProps> = ({
@@ -16,12 +17,14 @@ export const MessageEditorModal: React.FC<MessageEditorModalProps> = ({
   onSave,
   editingMessage,
   defaultSender = 'user',
+  platform = 'whatsapp',
 }) => {
   const [type, setType] = useState<MessageType>('text');
   const [sender, setSender] = useState<'user' | 'recipient'>(defaultSender);
   const [time, setTime] = useState('7:36 PM');
   const [status, setStatus] = useState<ReadReceiptStatus>('read');
   const [isStarred, setIsStarred] = useState(false);
+  const [bubbleColor, setBubbleColor] = useState<string>('');
 
   // Text specific
   const [text, setText] = useState('');
@@ -59,6 +62,7 @@ export const MessageEditorModal: React.FC<MessageEditorModalProps> = ({
       setTime(editingMessage.time || '7:36 PM');
       setStatus(editingMessage.status || 'read');
       setIsStarred(!!editingMessage.isStarred);
+      setBubbleColor(editingMessage.bubbleColor || '');
 
       if (editingMessage.type === 'text') {
         setText(editingMessage.text || '');
@@ -79,7 +83,7 @@ export const MessageEditorModal: React.FC<MessageEditorModalProps> = ({
         setFileName(editingMessage.fileName || '');
         setFileSize(editingMessage.fileSize || '');
         setFileType(editingMessage.fileType || 'PDF');
-      } else if (editingMessage.type === 'date_divider' || editingMessage.type === 'system_notice') {
+      } else if (editingMessage.type === 'date_divider' || editingMessage.type === 'system_notice' || editingMessage.type === 'telegram_join') {
         setDividerText(editingMessage.text || 'Today');
       }
     } else {
@@ -87,6 +91,7 @@ export const MessageEditorModal: React.FC<MessageEditorModalProps> = ({
       setSender(defaultSender);
       setText('');
       setType('text');
+      setBubbleColor('');
       const now = new Date();
       const hours = now.getHours() % 12 || 12;
       const mins = now.getMinutes().toString().padStart(2, '0');
@@ -112,6 +117,7 @@ export const MessageEditorModal: React.FC<MessageEditorModalProps> = ({
         time,
         status,
         isStarred,
+        bubbleColor: bubbleColor || undefined,
       };
     } else if (type === 'voice_note') {
       builtMessage = {
@@ -130,6 +136,15 @@ export const MessageEditorModal: React.FC<MessageEditorModalProps> = ({
         time,
         status,
         isStarred,
+        bubbleColor: bubbleColor || undefined,
+      };
+    } else if (type === 'telegram_join') {
+      builtMessage = {
+        id,
+        sender: 'recipient',
+        type: 'telegram_join',
+        text: dividerText || 'Nancy B joined Telegram!',
+        time: '',
       };
     } else if (type === 'channel_invite') {
       builtMessage = {
@@ -219,6 +234,7 @@ export const MessageEditorModal: React.FC<MessageEditorModalProps> = ({
               {[
                 { id: 'text', label: '💬 Text' },
                 { id: 'voice_note', label: '🎙️ Voice Note' },
+                { id: 'telegram_join', label: '🚀 Joined TG' },
                 { id: 'channel_invite', label: '📣 Channel Card' },
                 { id: 'image', label: '🖼️ Photo' },
                 { id: 'document', label: '📄 File' },
@@ -290,7 +306,7 @@ export const MessageEditorModal: React.FC<MessageEditorModalProps> = ({
           )}
 
           {/* Read Receipt (for outgoing) */}
-          {sender === 'user' && type !== 'date_divider' && type !== 'system_notice' && (
+          {sender === 'user' && type !== 'date_divider' && type !== 'system_notice' && type !== 'telegram_join' && (
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                 Read Receipts Status
@@ -314,6 +330,42 @@ export const MessageEditorModal: React.FC<MessageEditorModalProps> = ({
                     }`}
                   >
                     <span>{st.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Bubble Color Override (Useful for Telegram Purple vs Cyan) */}
+          {sender === 'user' && (type === 'text' || type === 'voice_note') && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+                Bubble Color
+              </label>
+              <div className="flex items-center gap-2 flex-wrap">
+                {[
+                  { label: 'Theme Default', color: '' },
+                  { label: 'Telegram Purple', color: '#8a47bb' },
+                  { label: 'Telegram Cyan Blue', color: '#2b84d4' },
+                  { label: 'WhatsApp Green', color: '#005c4b' },
+                  { label: 'Velvet Plum', color: '#67207c' },
+                ].map((col) => (
+                  <button
+                    key={col.label}
+                    type="button"
+                    onClick={() => setBubbleColor(col.color)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-colors ${
+                      bubbleColor === col.color
+                        ? 'border-emerald-500 bg-emerald-950/40 text-emerald-200'
+                        : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {col.color ? (
+                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: col.color }} />
+                    ) : (
+                      <span className="w-3 h-3 rounded-full border border-slate-600 bg-transparent" />
+                    )}
+                    <span>{col.label}</span>
                   </button>
                 ))}
               </div>

@@ -1,3 +1,5 @@
+export type AppPlatform = 'whatsapp' | 'telegram';
+
 export type ReadReceiptStatus = 'sent' | 'delivered' | 'read' | 'pending' | 'starred' | 'none';
 
 export type MessageType = 
@@ -7,7 +9,8 @@ export type MessageType =
   | 'image' 
   | 'document' 
   | 'date_divider' 
-  | 'system_notice';
+  | 'system_notice'
+  | 'telegram_join';
 
 export interface BaseMessage {
   id: string;
@@ -16,6 +19,7 @@ export interface BaseMessage {
   type: MessageType;
   status?: ReadReceiptStatus;
   isStarred?: boolean;
+  bubbleColor?: string; // Optional per-message bubble color (e.g. Purple vs Blue in Telegram screenshot)
 }
 
 export interface TextMessage extends BaseMessage {
@@ -72,6 +76,11 @@ export interface SystemNoticeMessage extends BaseMessage {
   text: string;
 }
 
+export interface TelegramJoinMessage extends BaseMessage {
+  type: 'telegram_join';
+  text: string;
+}
+
 export type ChatMessage = 
   | TextMessage 
   | VoiceNoteMessage 
@@ -79,7 +88,8 @@ export type ChatMessage =
   | ImageMessage 
   | DocumentMessage 
   | DateDividerMessage 
-  | SystemNoticeMessage;
+  | SystemNoticeMessage
+  | TelegramJoinMessage;
 
 export interface ContactProfile {
   name: string;
