@@ -5,6 +5,7 @@ interface ChatInputBarProps {
   theme: ThemeConfig;
   onSendMessage?: (text: string, sender: 'user' | 'recipient') => void;
   onSendImage?: (imageUrl: string, sender: 'user' | 'recipient') => void;
+  onSendVoiceNote?: (duration: string, sender: 'user' | 'recipient') => void;
   activeSender?: 'user' | 'recipient';
 }
 
@@ -12,25 +13,34 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
   theme,
   onSendMessage,
   onSendImage,
+  onSendVoiceNote,
   activeSender = 'user',
 }) => {
   const [inputText, setInputText] = useState('');
+  const [localSender, setLocalSender] = useState<'user' | 'recipient'>('user');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputText.trim()) {
       e.preventDefault();
       if (onSendMessage) {
-        onSendMessage(inputText.trim(), activeSender);
+        onSendMessage(inputText.trim(), localSender);
       }
       setInputText('');
     }
   };
 
   const handleSendClick = () => {
-    if (inputText.trim() && onSendMessage) {
-      onSendMessage(inputText.trim(), activeSender);
+    if (inputText.trim()) {
+      if (onSendMessage) {
+        onSendMessage(inputText.trim(), localSender);
+      }
       setInputText('');
+    } else {
+      if (onSendVoiceNote) {
+        const randomSecs = Math.floor(Math.random() * 15 + 3);
+        onSendVoiceNote(`0:${randomSecs.toString().padStart(2, '0')}`, localSender);
+      }
     }
   };
 
@@ -40,7 +50,7 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result && onSendImage) {
-          onSendImage(event.target.result as string, activeSender);
+          onSendImage(event.target.result as string, localSender);
         }
       };
       reader.readAsDataURL(file);
@@ -84,6 +94,20 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
             <line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="2.5" strokeLinecap="round" />
             <line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="2.5" strokeLinecap="round" />
           </svg>
+        </button>
+
+        {/* Active Sender Selector Toggle */}
+        <button
+          type="button"
+          onClick={() => setLocalSender(localSender === 'user' ? 'recipient' : 'user')}
+          className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all shrink-0 uppercase tracking-wider cursor-pointer ${
+            localSender === 'user'
+              ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm'
+              : 'bg-slate-700 hover:bg-slate-600 text-slate-100 shadow-sm'
+          }`}
+          title={`Switch Sender (Currently: ${localSender === 'user' ? 'Outgoing / You' : 'Incoming / Them'})`}
+        >
+          {localSender === 'user' ? '► Out' : '◄ In'}
         </button>
 
         {/* Text Input */}

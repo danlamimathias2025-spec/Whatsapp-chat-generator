@@ -43,6 +43,8 @@ interface ControlPanelProps {
   setSmartChronologyEnabled: (enabled: boolean) => void;
   smartChronologyMinutes: number;
   setSmartChronologyMinutes: (minutes: number) => void;
+  globalReadReceiptsEnabled?: boolean;
+  setGlobalReadReceiptsEnabled?: (val: boolean) => void;
   referenceImageUrl?: string;
   telegramReferenceImageUrl?: string;
 }
@@ -70,6 +72,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   setSmartChronologyEnabled,
   smartChronologyMinutes,
   setSmartChronologyMinutes,
+  globalReadReceiptsEnabled = true,
+  setGlobalReadReceiptsEnabled,
   onOpenMessageModal,
   onLoadReferencePreset,
   onLoadTelegramReferencePreset,
@@ -314,25 +318,70 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         {activeTab === 'messages' && (
           <div className="space-y-3">
             {/* Action Bar for Adding Messages */}
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => onOpenMessageModal(undefined, 'user')}
-                className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-white shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-98 ${
-                  platform === 'telegram'
-                    ? 'bg-[#2a8ee4] hover:bg-[#257dc8]'
-                    : 'bg-emerald-600 hover:bg-emerald-500'
-                }`}
-              >
-                <span>+ Add Outgoing (You)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onOpenMessageModal(undefined, 'recipient')}
-                className="flex-1 py-2 px-3 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-98"
-              >
-                <span>+ Add Incoming (Them)</span>
-              </button>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => onOpenMessageModal(undefined, 'user')}
+                  className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold text-white shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-98 ${
+                    platform === 'telegram'
+                      ? 'bg-[#2a8ee4] hover:bg-[#257dc8]'
+                      : 'bg-emerald-600 hover:bg-emerald-500'
+                  }`}
+                >
+                  <span>+ Add Outgoing (You)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenMessageModal(undefined, 'recipient')}
+                  className="flex-1 py-2 px-3 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-98"
+                >
+                  <span>+ Add Incoming (Them)</span>
+                </button>
+              </div>
+
+              {/* Date Separator & System notice Quick-Add Row */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const customText = prompt("Enter custom date label (e.g. 'Today', 'Yesterday', 'October 2, 2026'):", "Today");
+                    if (customText !== null) {
+                      const newMsg: ChatMessage = {
+                        id: `msg-${Date.now()}`,
+                        sender: 'recipient',
+                        type: 'date_divider',
+                        text: customText.trim() || 'Today',
+                        time: '',
+                      };
+                      setMessages([...messages, newMsg]);
+                    }
+                  }}
+                  className="py-1.5 px-3 rounded-xl text-[11px] font-semibold bg-slate-900 hover:bg-slate-800 text-amber-400 border border-slate-800 shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-98 cursor-pointer"
+                >
+                  <span>📅 + Date Separator</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const text = prompt("Enter system notice or encryption disclaimer text:", "Messages and calls are end-to-end encrypted. No one outside of this chat can read them.");
+                    if (text) {
+                      const newMsg: ChatMessage = {
+                        id: `msg-${Date.now()}`,
+                        sender: 'recipient',
+                        type: 'system_notice',
+                        text: text.trim(),
+                        time: '',
+                      };
+                      setMessages([...messages, newMsg]);
+                    }
+                  }}
+                  className="py-1.5 px-3 rounded-xl text-[11px] font-semibold bg-slate-900 hover:bg-slate-800 text-sky-400 border border-slate-800 shadow-sm flex items-center justify-center gap-1.5 transition-all active:scale-98 cursor-pointer"
+                >
+                  <span>🔒 + System Notice</span>
+                </button>
+              </div>
             </div>
 
             {/* Smart Chronology Setting Card */}
@@ -369,6 +418,28 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   </select>
                 </div>
               )}
+            </div>
+
+            {/* Global Read Receipts Setting Card */}
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-white">✓✓ Read Receipts</span>
+                  <span className="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px]">Global Status</span>
+                </div>
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={globalReadReceiptsEnabled}
+                    onChange={(e) => setGlobalReadReceiptsEnabled?.(e.target.checked)}
+                    className="accent-sky-500 rounded cursor-pointer"
+                  />
+                  <span>{globalReadReceiptsEnabled ? 'ENABLED' : 'DISABLED'}</span>
+                </label>
+              </div>
+              <p className="text-[11px] text-slate-500 leading-normal">
+                Easily toggle checkmark icons (Pending, Sent, Delivered, Read) on or off for all sent bubbles dynamically.
+              </p>
             </div>
 
             {/* Bulk Selection & Action Toolbar */}
@@ -968,12 +1039,17 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                       onChange={(e) =>
                         setStatusBar({ ...statusBar, notificationType: e.target.value as any })
                       }
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-white text-xs outline-none"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 text-white text-xs outline-none cursor-pointer"
                     >
                       <option value="message">💬 Message Bubble</option>
                       <option value="mail">✉️ Mail Envelope</option>
                       <option value="call">📞 Phone Call</option>
                       <option value="dot">🟢 Notification Dot</option>
+                      <option value="whatsapp">🟢 WhatsApp Icon</option>
+                      <option value="telegram">🔵 Telegram Icon</option>
+                      <option value="facebook">🔷 Facebook Icon</option>
+                      <option value="instagram">📸 Instagram Icon</option>
+                      <option value="discord">🎮 Discord Icon</option>
                     </select>
                   </div>
                 )}

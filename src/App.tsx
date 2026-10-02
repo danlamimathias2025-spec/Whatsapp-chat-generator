@@ -64,6 +64,7 @@ export default function App() {
   const [watermark, setWatermark] = useState<WatermarkConfig>(DEFAULT_WATERMARK);
   const [smartChronologyEnabled, setSmartChronologyEnabled] = useState<boolean>(true);
   const [smartChronologyMinutes, setSmartChronologyMinutes] = useState<number>(2);
+  const [globalReadReceiptsEnabled, setGlobalReadReceiptsEnabled] = useState<boolean>(true);
 
   // Helper for Smart Chronology timestamp calculation
   const calculateNextTimestamp = (currentMessages: ChatMessage[], incrementMinutes: number): string => {
@@ -270,6 +271,31 @@ export default function App() {
     setMessages([...messages, newMsg]);
   };
 
+  const handleQuickSendVoiceNote = (duration: string, senderType: 'user' | 'recipient' = 'user') => {
+    const timeStr = smartChronologyEnabled
+      ? calculateNextTimestamp(messages, smartChronologyMinutes)
+      : (() => {
+          const now = new Date();
+          const hours = now.getHours() % 12 || 12;
+          const mins = now.getMinutes().toString().padStart(2, '0');
+          const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+          return `${hours}:${mins} ${ampm}`;
+        })();
+
+    const newMsg: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      sender: senderType,
+      type: 'voice_note',
+      duration,
+      waveformProgress: 20,
+      avatarBadgeType: 'profile',
+      time: timeStr,
+      status: senderType === 'user' ? 'read' : 'none',
+    };
+
+    setMessages([...messages, newMsg]);
+  };
+
   const handleExportScreenshot = async (options: ExportOptions) => {
     if (!phoneCanvasRef.current) return;
     try {
@@ -352,6 +378,8 @@ export default function App() {
             setSmartChronologyEnabled={setSmartChronologyEnabled}
             smartChronologyMinutes={smartChronologyMinutes}
             setSmartChronologyMinutes={setSmartChronologyMinutes}
+            globalReadReceiptsEnabled={globalReadReceiptsEnabled}
+            setGlobalReadReceiptsEnabled={setGlobalReadReceiptsEnabled}
             onOpenMessageModal={handleOpenMessageModal}
             onLoadReferencePreset={handleLoadReferencePreset}
             onLoadTelegramReferencePreset={handleLoadTelegramReferencePreset}
@@ -444,8 +472,10 @@ export default function App() {
             onToggleSender={handleToggleSender}
             onSendMessage={handleQuickSendMessage}
             onSendImage={handleQuickSendImage}
+            onSendVoiceNote={handleQuickSendVoiceNote}
             onHeaderAvatarClick={() => headerAvatarInputRef.current?.click()}
             onReorderMessages={handleReorderMessages}
+            globalReadReceiptsEnabled={globalReadReceiptsEnabled}
           />
         </section>
       </main>

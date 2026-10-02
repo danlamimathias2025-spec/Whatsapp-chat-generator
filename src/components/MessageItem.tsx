@@ -14,6 +14,7 @@ interface MessageItemProps {
   onDelete?: (id: string) => void;
   onToggleSender?: (id: string) => void;
   isFirstInGroup?: boolean;
+  globalReadReceiptsEnabled?: boolean;
 }
 
 export const MessageItem: React.FC<MessageItemProps> = ({
@@ -25,6 +26,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   onEdit,
   onDelete,
   onToggleSender,
+  globalReadReceiptsEnabled = true,
 }) => {
   const isOutgoing = message.sender === 'user';
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -222,7 +224,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 {message.time}
               </span>
               {isOutgoing && (
-                <ReadReceiptIcon status={message.status} isStarred={message.isStarred} />
+                <ReadReceiptIcon status={message.status} isStarred={message.isStarred} globalReadReceiptsEnabled={globalReadReceiptsEnabled} />
               )}
             </div>
           </div>
@@ -283,7 +285,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     {message.time}
                   </span>
                   {isOutgoing && (
-                    <ReadReceiptIcon status={message.status} isStarred={message.isStarred} />
+                    <ReadReceiptIcon status={message.status} isStarred={message.isStarred} globalReadReceiptsEnabled={globalReadReceiptsEnabled} />
                   )}
                 </div>
               </div>
@@ -334,7 +336,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 {message.time}
               </span>
               {isOutgoing && (
-                <ReadReceiptIcon status={message.status} isStarred={message.isStarred} />
+                <ReadReceiptIcon status={message.status} isStarred={message.isStarred} globalReadReceiptsEnabled={globalReadReceiptsEnabled} />
               )}
             </div>
           </div>
@@ -359,7 +361,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 {message.time}
               </span>
               {isOutgoing && (
-                <ReadReceiptIcon status={message.status} isStarred={message.isStarred} />
+                <ReadReceiptIcon status={message.status} isStarred={message.isStarred} globalReadReceiptsEnabled={globalReadReceiptsEnabled} />
               )}
             </div>
           </div>
@@ -384,7 +386,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                 {message.time}
               </span>
               {isOutgoing && (
-                <ReadReceiptIcon status={message.status} isStarred={message.isStarred} />
+                <ReadReceiptIcon status={message.status} isStarred={message.isStarred} globalReadReceiptsEnabled={globalReadReceiptsEnabled} />
               )}
             </div>
           </div>

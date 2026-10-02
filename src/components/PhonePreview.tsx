@@ -31,9 +31,11 @@ interface PhonePreviewProps {
   onToggleSender?: (id: string) => void;
   onSendMessage?: (text: string, sender: 'user' | 'recipient') => void;
   onSendImage?: (imageUrl: string, sender: 'user' | 'recipient') => void;
+  onSendVoiceNote?: (duration: string, sender: 'user' | 'recipient') => void;
   onHeaderAvatarClick?: () => void;
   onHeaderNameClick?: () => void;
   onReorderMessages?: (dragIndex: number, hoverIndex: number) => void;
+  globalReadReceiptsEnabled?: boolean;
 }
 
 export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
@@ -54,9 +56,11 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
       onToggleSender,
       onSendMessage,
       onSendImage,
+      onSendVoiceNote,
       onHeaderAvatarClick,
       onHeaderNameClick,
       onReorderMessages,
+      globalReadReceiptsEnabled = true,
     },
     ref
   ) => {
@@ -212,6 +216,7 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
                       onEdit={onEditMessage}
                       onDelete={onDeleteMessage}
                       onToggleSender={onToggleSender}
+                      globalReadReceiptsEnabled={globalReadReceiptsEnabled}
                     />
                   </div>
                 ))
@@ -223,6 +228,7 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
               theme={theme}
               onSendMessage={onSendMessage}
               onSendImage={onSendImage}
+              onSendVoiceNote={onSendVoiceNote}
               activeSender="user"
             />
 

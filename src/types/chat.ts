@@ -115,7 +115,7 @@ export interface StatusBarConfig {
   signalStrength: number; // 1 to 5
   networkType: '5G' | '4G' | 'LTE' | '3G' | 'VoLTE' | 'none';
   showNotificationIcon: boolean;
-  notificationType: 'message' | 'mail' | 'call' | 'dot';
+  notificationType: 'message' | 'mail' | 'call' | 'dot' | 'whatsapp' | 'telegram' | 'facebook' | 'instagram' | 'discord';
   showAlarm: boolean;
   showLocation: boolean;
   showBluetooth: boolean;
