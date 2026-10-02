@@ -215,6 +215,13 @@ export default function App() {
     );
   };
 
+  const handleReorderMessages = (dragIndex: number, hoverIndex: number) => {
+    const updated = [...messages];
+    const [movedItem] = updated.splice(dragIndex, 1);
+    updated.splice(hoverIndex, 0, movedItem);
+    setMessages(updated);
+  };
+
   const handleQuickSendMessage = (text: string, senderType: 'user' | 'recipient' = 'user') => {
     const timeStr = smartChronologyEnabled
       ? calculateNextTimestamp(messages, smartChronologyMinutes)
@@ -234,6 +241,30 @@ export default function App() {
       time: timeStr,
       status: senderType === 'user' ? 'read' : 'none',
       bubbleColor: platform === 'telegram' && senderType === 'user' ? '#8a47bb' : undefined,
+    };
+
+    setMessages([...messages, newMsg]);
+  };
+
+  const handleQuickSendImage = (imageUrl: string, senderType: 'user' | 'recipient' = 'user') => {
+    const timeStr = smartChronologyEnabled
+      ? calculateNextTimestamp(messages, smartChronologyMinutes)
+      : (() => {
+          const now = new Date();
+          const hours = now.getHours() % 12 || 12;
+          const mins = now.getMinutes().toString().padStart(2, '0');
+          const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+          return `${hours}:${mins} ${ampm}`;
+        })();
+
+    const newMsg: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      sender: senderType,
+      type: 'image',
+      imageUrl,
+      caption: '',
+      time: timeStr,
+      status: senderType === 'user' ? 'read' : 'none',
     };
 
     setMessages([...messages, newMsg]);
@@ -412,7 +443,9 @@ export default function App() {
             onDeleteMessage={handleDeleteMessage}
             onToggleSender={handleToggleSender}
             onSendMessage={handleQuickSendMessage}
+            onSendImage={handleQuickSendImage}
             onHeaderAvatarClick={() => headerAvatarInputRef.current?.click()}
+            onReorderMessages={handleReorderMessages}
           />
         </section>
       </main>

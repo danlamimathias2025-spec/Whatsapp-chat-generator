@@ -75,7 +75,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
   onLoadTelegramReferencePreset,
 }) => {
   const [activeTab, setActiveTab] = useState<
-    'messages' | 'profiles' | 'status' | 'theme' | 'compare' | 'watermark'
+    'messages' | 'profiles' | 'status' | 'theme' | 'reset' | 'watermark'
   >('messages');
 
   // File Input Refs for Profile Image Uploads
@@ -284,7 +284,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
           { id: 'status', label: '🔋 Status Bar' },
           { id: 'theme', label: '🎨 Theme & BG' },
           { id: 'watermark', label: '🛡️ Watermark' },
-          { id: 'compare', label: '⚡ Presets' },
+          { id: 'reset', label: '🔄 Reset Chat' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -699,42 +699,18 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                   </div>
                 </div>
 
-                {/* Quick Presets */}
-                <div className="space-y-1 pt-1">
-                  <span className="text-[11px] text-slate-400 font-medium block">Quick Avatar Presets:</span>
-                  <div className="flex gap-1.5 flex-wrap">
+                {/* Clear Avatar Option */}
+                {recipient.avatarUrl && (
+                  <div className="pt-1">
                     <button
                       type="button"
-                      onClick={() => setRecipient({ ...recipient, avatarUrl: ASSETS.nancyAvatar })}
-                      className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-[11px] border border-slate-800"
+                      onClick={() => setRecipient({ ...recipient, avatarUrl: '' })}
+                      className="px-2.5 py-1 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 rounded-lg text-[11px] border border-rose-800/40 transition-colors"
                     >
-                      👩 Nancy B
+                      ❌ Clear Current Avatar
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setRecipient({ ...recipient, avatarUrl: ASSETS.warningAvatarBadge })}
-                      className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-[11px] border border-slate-800"
-                    >
-                      ⚠️ Warning Sign
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRecipient({ ...recipient, avatarUrl: ASSETS.purpleMicBadge })}
-                      className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-lg text-[11px] border border-slate-800"
-                    >
-                      🎤 Neon Mic
-                    </button>
-                    {recipient.avatarUrl && (
-                      <button
-                        type="button"
-                        onClick={() => setRecipient({ ...recipient, avatarUrl: '' })}
-                        className="px-2.5 py-1 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 rounded-lg text-[11px] border border-rose-800/40"
-                      >
-                        ❌ Clear Avatar
-                      </button>
-                    )}
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -1240,49 +1216,82 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 5: PRESETS & REFERENCE COMPARISON */}
+        {/* TAB 5: RESET CHAT AND WIPE OPTIONS */}
         {/* ========================================================================= */}
-        {activeTab === 'compare' && (
+        {activeTab === 'reset' && (
           <div className="space-y-4">
-            <div className="p-4 rounded-xl bg-gradient-to-br from-sky-950/40 via-slate-950 to-slate-900 border border-sky-800/40 space-y-3">
+            {/* Wipe Messages Card */}
+            <div className="p-4 rounded-xl bg-gradient-to-br from-red-950/40 via-slate-950 to-slate-900 border border-red-800/40 space-y-3">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-white">
-                  Telegram Reference Matcher (Nancy B)
+                <span className="text-sm font-bold text-red-400">
+                  ⚠️ Wipe Chat History
                 </span>
-                <span className="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 text-[10px] font-semibold">
-                  1-Click Match
+                <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 text-[10px] font-semibold uppercase tracking-wider">
+                  Irreversible
                 </span>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Instantly load Nancy B Telegram chat with "Nancy B joined Telegram!", AMOLED pure black background, purple & cyan-blue message bubbles, and date capsules!
+                Wipe all messages in the current conversation stream. This clears out all text, image attachments, voice notes, date labels, and joining cards.
               </p>
               <button
                 type="button"
-                onClick={onLoadTelegramReferencePreset}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-[#2a8ee4] hover:bg-[#237fcb] text-white shadow-lg transition-all active:scale-98 flex items-center justify-center gap-2"
+                onClick={() => {
+                  if (confirm("Are you sure you want to completely delete all messages? This action cannot be undone.")) {
+                    setMessages([]);
+                  }
+                }}
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-500 text-white shadow-lg transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>✈️ Restore Telegram Screenshot State</span>
+                <span>🗑️ Wipe & Clear All Messages</span>
               </button>
             </div>
 
-            <div className="p-4 rounded-xl bg-gradient-to-br from-purple-950/40 via-slate-950 to-slate-900 border border-purple-800/40 space-y-3">
+            {/* Custom Factory Reset Card */}
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-white">
-                  WhatsApp Reference Matcher (Boss Sunny)
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-semibold">
-                  1-Click Match
+                  🔄 Full Factory Reset
                 </span>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Restore the WhatsApp Business Velvet Purple screenshot with voice notes, waveforms, and channel admin invite card.
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Clears all chat history and resets custom profiles, status bars, wallpaper backgrounds, and watermarks back to system defaults.
               </p>
               <button
                 type="button"
-                onClick={onLoadReferencePreset}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white shadow-lg transition-all active:scale-98 flex items-center justify-center gap-2"
+                onClick={() => {
+                  if (confirm("Reset everything back to fresh defaults?")) {
+                    setMessages([]);
+                    setRecipient({
+                      name: '',
+                      nameFont: 'roboto',
+                      statusText: platform === 'telegram' ? 'last seen recently' : 'online',
+                      avatarUrl: '',
+                      isOnline: platform === 'telegram' ? false : true,
+                      isBusiness: false,
+                      isVerified: false,
+                    });
+                    setSender({
+                      name: '',
+                      nameFont: 'default',
+                      statusText: '',
+                      avatarUrl: '',
+                      isOnline: true,
+                      isBusiness: false,
+                      isVerified: false,
+                    });
+                    setWallpaper({
+                      type: 'solid',
+                      imageUrl: '',
+                      opacity: 0.6,
+                      blur: 0,
+                      zoom: 1,
+                      darkness: 0,
+                    });
+                  }
+                }}
+                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all active:scale-98 flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>⚡ Restore WhatsApp Screenshot State</span>
+                <span>🔄 Reset Profiles & Themes to Default</span>
               </button>
             </div>
           </div>

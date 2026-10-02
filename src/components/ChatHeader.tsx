@@ -89,7 +89,7 @@ export const ChatHeader: React.FC<ChatHeaderProps> = ({
             <span
               className={`truncate text-white ${getFontFamilyClass(recipient.nameFont)}`}
             >
-              {recipient.name || 'Boss Sunny 😈'}
+              {recipient.name || 'Name'}
             </span>
             {recipient.isVerified && (
               <svg className="w-4 h-4 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">

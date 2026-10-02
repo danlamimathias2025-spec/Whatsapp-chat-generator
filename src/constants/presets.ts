@@ -55,9 +55,9 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
 ];
 
 export const DEFAULT_TELEGRAM_RECIPIENT: ContactProfile = {
-  name: 'Nancy B',
+  name: '',
   nameFont: 'roboto',
-  avatarUrl: ASSETS.nancyAvatar,
+  avatarUrl: '',
   statusText: 'last seen recently',
   isOnline: false,
   isBusiness: false,
@@ -65,7 +65,7 @@ export const DEFAULT_TELEGRAM_RECIPIENT: ContactProfile = {
 };
 
 export const DEFAULT_TELEGRAM_SENDER: ContactProfile = {
-  name: 'You',
+  name: '',
   nameFont: 'default',
   avatarUrl: '',
   statusText: 'online',
@@ -128,113 +128,12 @@ export const TELEGRAM_THEMES: Record<string, ThemeConfig> = {
   },
 };
 
-export const TELEGRAM_REFERENCE_MESSAGES: ChatMessage[] = [
-  {
-    id: 'tg-1',
-    sender: 'recipient',
-    type: 'date_divider',
-    text: 'September 21',
-    time: '',
-  },
-  {
-    id: 'tg-2',
-    sender: 'recipient',
-    type: 'telegram_join',
-    text: 'Nancy B joined Telegram!',
-    time: '',
-  },
-  {
-    id: 'tg-3',
-    sender: 'recipient',
-    type: 'date_divider',
-    text: 'September 22',
-    time: '',
-  },
-  {
-    id: 'tg-4',
-    sender: 'user',
-    type: 'text',
-    text: 'Xup',
-    time: '11:35 PM',
-    status: 'read',
-    bubbleColor: '#8a47bb',
-  },
-  {
-    id: 'tg-5',
-    sender: 'recipient',
-    type: 'date_divider',
-    text: 'September 23',
-    time: '',
-  },
-  {
-    id: 'tg-6',
-    sender: 'recipient',
-    type: 'text',
-    text: 'Hi',
-    time: '6:17 PM',
-    status: 'none',
-  },
-  {
-    id: 'tg-7',
-    sender: 'recipient',
-    type: 'date_divider',
-    text: 'September 25',
-    time: '',
-  },
-  {
-    id: 'tg-8',
-    sender: 'user',
-    type: 'text',
-    text: 'How en be nah',
-    time: '1:19 AM',
-    status: 'read',
-    bubbleColor: '#8a47bb',
-  },
-  {
-    id: 'tg-9',
-    sender: 'recipient',
-    type: 'text',
-    text: 'Am good',
-    time: '6:31 AM',
-    status: 'none',
-  },
-  {
-    id: 'tg-10',
-    sender: 'recipient',
-    type: 'date_divider',
-    text: 'September 26',
-    time: '',
-  },
-  {
-    id: 'tg-11',
-    sender: 'user',
-    type: 'text',
-    text: 'Sharp',
-    time: '10:34 PM',
-    status: 'read',
-    bubbleColor: '#2b84d4',
-  },
-  {
-    id: 'tg-12',
-    sender: 'recipient',
-    type: 'date_divider',
-    text: 'September 27',
-    time: '',
-  },
-  {
-    id: 'tg-13',
-    sender: 'recipient',
-    type: 'text',
-    text: 'Yh',
-    time: '10:30 AM',
-    status: 'none',
-  },
-];
+export const TELEGRAM_REFERENCE_MESSAGES: ChatMessage[] = [];
 
 export const DEFAULT_RECIPIENT: ContactProfile = {
-  name: 'ℬoss Sunny 😈',
+  name: '',
   nameFont: 'cursive',
-  avatarUrl: ASSETS.warningAvatarBadge,
+  avatarUrl: '',
   statusText: '',
   isOnline: false,
   isBusiness: true,
@@ -243,9 +142,9 @@ export const DEFAULT_RECIPIENT: ContactProfile = {
 };
 
 export const DEFAULT_SENDER: ContactProfile = {
-  name: 'You',
+  name: '',
   nameFont: 'default',
-  avatarUrl: ASSETS.purpleMicBadge,
+  avatarUrl: '',
   statusText: '',
   isOnline: true,
   isBusiness: false,
@@ -369,140 +268,16 @@ export const THEMES: Record<string, ThemeConfig> = {
 };
 
 export const DEFAULT_WALLPAPER: WallpaperConfig = {
-  type: 'image',
-  imageUrl: ASSETS.wallpaper,
-  opacity: 0.85,
+  type: 'solid',
+  imageUrl: '',
+  opacity: 0.6,
   blur: 0,
-  darkness: 0.35,
+  darkness: 0,
   zoom: 1,
 };
 
 // Exact messages from the uploaded reference screenshot
-export const REFERENCE_MESSAGES: ChatMessage[] = [
-  {
-    id: 'msg-1',
-    sender: 'recipient',
-    type: 'text',
-    text: 'How e de be',
-    time: '7:36 PM',
-    status: 'none',
-  },
-  {
-    id: 'msg-2',
-    sender: 'user',
-    type: 'voice_note',
-    duration: '0:12',
-    time: '7:37 PM',
-    status: 'read',
-    avatarBadgeType: 'purple_mic',
-    avatarBadgeUrl: ASSETS.purpleMicBadge,
-    waveformProgress: 18,
-  },
-  {
-    id: 'msg-3',
-    sender: 'recipient',
-    type: 'text',
-    text: 'E fit be',
-    time: '7:38 PM',
-    status: 'none',
-  },
-  {
-    id: 'msg-4',
-    sender: 'user',
-    type: 'text',
-    text: 'Yeah',
-    time: '7:39 PM',
-    status: 'read',
-  },
-  {
-    id: 'msg-5',
-    sender: 'recipient',
-    type: 'voice_note',
-    duration: '0:16',
-    time: '7:52 PM',
-    status: 'none',
-    avatarBadgeType: 'warning_icon',
-    avatarBadgeUrl: ASSETS.warningAvatarBadge,
-    waveformProgress: 35,
-  },
-  {
-    id: 'msg-6',
-    sender: 'user',
-    type: 'voice_note',
-    duration: '0:07',
-    time: '7:53 PM',
-    status: 'read',
-    avatarBadgeType: 'purple_mic',
-    avatarBadgeUrl: ASSETS.purpleMicBadge,
-    waveformProgress: 22,
-  },
-  {
-    id: 'msg-7',
-    sender: 'recipient',
-    type: 'text',
-    text: 'Alright',
-    time: '7:53 PM',
-    status: 'none',
-  },
-  {
-    id: 'msg-8',
-    sender: 'user',
-    type: 'text',
-    text: 'U still dey there',
-    time: '9:04 PM',
-    status: 'read',
-  },
-  {
-    id: 'msg-9',
-    sender: 'user',
-    type: 'text',
-    text: 'Nah this rain stop me',
-    time: '9:04 PM',
-    status: 'read',
-  },
-  {
-    id: 'msg-10',
-    sender: 'recipient',
-    type: 'text',
-    text: 'I don enter house',
-    time: '9:04 PM',
-    status: 'none',
-  },
-  {
-    id: 'msg-11',
-    sender: 'user',
-    type: 'text',
-    text: 'Okay',
-    time: '9:08 PM',
-    status: 'read',
-  },
-  {
-    id: 'msg-12',
-    sender: 'recipient',
-    type: 'date_divider',
-    text: 'Today',
-    time: '',
-  },
-  {
-    id: 'msg-13',
-    sender: 'user',
-    type: 'text',
-    text: 'Happy new month',
-    time: '4:32 PM',
-    status: 'read',
-  },
-  {
-    id: 'msg-14',
-    sender: 'user',
-    type: 'channel_invite',
-    time: '5:32 PM',
-    status: 'read',
-    channelName: 'LEGIT 🤑 UPDATES ✅✅✅',
-    subtitle: 'Channel admin invite',
-    statusBadge: 'Invite accepted',
-    description: "Accept this invitation to be an admin for my WhatsApp channel, 'LEGIT 🤑 UPDATES ✅✅✅'",
-  },
-];
+export const REFERENCE_MESSAGES: ChatMessage[] = [];
 
 export const OTHER_PRESETS = [
   {

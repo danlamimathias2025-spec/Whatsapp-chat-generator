@@ -55,7 +55,7 @@ export const TelegramHeader: React.FC<TelegramHeaderProps> = ({
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center text-xs font-bold text-white uppercase">
-              {recipient.name.slice(0, 2) || 'NB'}
+              {recipient.name.slice(0, 2) || 'TG'}
             </div>
           )}
         </div>
@@ -63,7 +63,7 @@ export const TelegramHeader: React.FC<TelegramHeaderProps> = ({
         {/* Contact Info */}
         <div className="flex flex-col min-w-0">
           <span className="text-[13.5px] font-bold text-white truncate leading-tight">
-            {recipient.name || 'Nancy B'}
+            {recipient.name || 'Name'}
           </span>
           <span className="text-[11px] text-slate-400 italic truncate leading-tight">
             {recipient.statusText || 'last seen recently'}

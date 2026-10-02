@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useRef } from 'react';
+import React, { forwardRef, useEffect, useRef, useState } from 'react';
 import {
   AppPlatform,
   ChatMessage,
@@ -30,8 +30,10 @@ interface PhonePreviewProps {
   onDeleteMessage?: (id: string) => void;
   onToggleSender?: (id: string) => void;
   onSendMessage?: (text: string, sender: 'user' | 'recipient') => void;
+  onSendImage?: (imageUrl: string, sender: 'user' | 'recipient') => void;
   onHeaderAvatarClick?: () => void;
   onHeaderNameClick?: () => void;
+  onReorderMessages?: (dragIndex: number, hoverIndex: number) => void;
 }
 
 export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
@@ -51,12 +53,37 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
       onDeleteMessage,
       onToggleSender,
       onSendMessage,
+      onSendImage,
       onHeaderAvatarClick,
       onHeaderNameClick,
+      onReorderMessages,
     },
     ref
   ) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const [draggedMsgIndex, setDraggedMsgIndex] = useState<number | null>(null);
+    const [dragOverMsgIndex, setDragOverMsgIndex] = useState<number | null>(null);
+
+    const handleMsgDragStart = (e: React.DragEvent, index: number) => {
+      setDraggedMsgIndex(index);
+      e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleMsgDragOver = (e: React.DragEvent, index: number) => {
+      e.preventDefault();
+      if (dragOverMsgIndex !== index) {
+        setDragOverMsgIndex(index);
+      }
+    };
+
+    const handleMsgDrop = (e: React.DragEvent, targetIndex: number) => {
+      e.preventDefault();
+      if (draggedMsgIndex !== null && draggedMsgIndex !== targetIndex && onReorderMessages) {
+        onReorderMessages(draggedMsgIndex, targetIndex);
+      }
+      setDraggedMsgIndex(null);
+      setDragOverMsgIndex(null);
+    };
 
     // Auto scroll to bottom when messages update
     useEffect(() => {
@@ -164,17 +191,29 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
                 </div>
               ) : (
                 messages.map((msg, index) => (
-                  <MessageItem
+                  <div
                     key={msg.id || index}
-                    message={msg}
-                    theme={theme}
-                    recipient={recipient}
-                    sender={sender}
-                    platform={platform}
-                    onEdit={onEditMessage}
-                    onDelete={onDeleteMessage}
-                    onToggleSender={onToggleSender}
-                  />
+                    draggable
+                    onDragStart={(e) => handleMsgDragStart(e, index)}
+                    onDragOver={(e) => handleMsgDragOver(e, index)}
+                    onDrop={(e) => handleMsgDrop(e, index)}
+                    className={`transition-all duration-150 ${
+                      draggedMsgIndex === index ? 'opacity-30 scale-95' : ''
+                    } ${
+                      dragOverMsgIndex === index ? 'border-t-2 border-dashed border-emerald-500/60' : ''
+                    } cursor-grab active:cursor-grabbing`}
+                  >
+                    <MessageItem
+                      message={msg}
+                      theme={theme}
+                      recipient={recipient}
+                      sender={sender}
+                      platform={platform}
+                      onEdit={onEditMessage}
+                      onDelete={onDeleteMessage}
+                      onToggleSender={onToggleSender}
+                    />
+                  </div>
                 ))
               )}
             </div>
@@ -183,6 +222,7 @@ export const PhonePreview = forwardRef<HTMLDivElement, PhonePreviewProps>(
             <ChatInputBar
               theme={theme}
               onSendMessage={onSendMessage}
+              onSendImage={onSendImage}
               activeSender="user"
             />
 

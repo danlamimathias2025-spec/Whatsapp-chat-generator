@@ -1,18 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ThemeConfig } from '../types/chat';
 
 interface ChatInputBarProps {
   theme: ThemeConfig;
   onSendMessage?: (text: string, sender: 'user' | 'recipient') => void;
+  onSendImage?: (imageUrl: string, sender: 'user' | 'recipient') => void;
   activeSender?: 'user' | 'recipient';
 }
 
 export const ChatInputBar: React.FC<ChatInputBarProps> = ({
   theme,
   onSendMessage,
+  onSendImage,
   activeSender = 'user',
 }) => {
   const [inputText, setInputText] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && inputText.trim()) {
@@ -31,8 +34,36 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result && onSendImage) {
+          onSendImage(event.target.result as string, activeSender);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+    // Clear selection so the same image can be reselected if needed
+    e.target.value = '';
+  };
+
+  const triggerUpload = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="w-full px-2 py-2 flex items-center gap-2 select-none z-20">
+      {/* Hidden file input for image uploads */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        className="hidden"
+      />
+
       {/* Pill Input Container */}
       <div
         className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-full shadow-md backdrop-blur-sm transition-colors duration-150"
@@ -69,8 +100,10 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
         {/* Attachment Paperclip Button */}
         <button
           type="button"
-          className="text-slate-400 hover:text-white transition-colors shrink-0 -rotate-45"
+          onClick={triggerUpload}
+          className="text-slate-400 hover:text-emerald-400 transition-colors shrink-0 -rotate-45 cursor-pointer"
           aria-label="Attach File"
+          title="Upload / Send Image"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
@@ -81,8 +114,10 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
         {!inputText && (
           <button
             type="button"
-            className="text-slate-400 hover:text-white transition-colors shrink-0"
+            onClick={triggerUpload}
+            className="text-slate-400 hover:text-emerald-400 transition-colors shrink-0 cursor-pointer"
             aria-label="Camera"
+            title="Upload / Send Image"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
