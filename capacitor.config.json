@@ -1,0 +1,14 @@
+{
+  "appId": "com.whatscraft.app",
+  "appName": "WhatsCraft",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  }
+}

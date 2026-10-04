@@ -1,86 +1,171 @@
 import fs from 'fs';
 import path from 'path';
-import { PNG } from 'pngjs';
+import { Resvg } from '@resvg/resvg-js';
 
 const publicDir = path.resolve('public');
 if (!fs.existsSync(publicDir)) {
   fs.mkdirSync(publicDir, { recursive: true });
 }
 
-function drawWhatsAppIcon(width, height, isMaskable = false) {
-  const png = new PNG({ width, height });
+// Exact replica of the user's uploaded icon
+const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="waGreenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4CE876"/>
+      <stop offset="50%" stop-color="#3CD56B"/>
+      <stop offset="100%" stop-color="#23BD5E"/>
+    </linearGradient>
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.1"/>
+    </filter>
+  </defs>
 
-  // WhatsApp colors
-  const bgR = 0x25, bgG = 0xD3, bgB = 0x66; // #25D366
-  const whiteR = 0xFF, whiteG = 0xFF, whiteB = 0xFF;
+  <!-- App Icon Squircle Background -->
+  <rect width="512" height="512" rx="115" fill="url(#waGreenGrad)"/>
 
-  const cx = width / 2;
-  const cy = height / 2;
-  const outerRadius = isMaskable ? width * 0.5 : width * 0.45;
-  const bubbleRadius = width * 0.28;
+  <!-- Logo Graphics Group -->
+  <g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Speech Bubble Outline with gap at top right and speech tail at bottom left -->
+    <path 
+      d="M 296 155 
+         C 200 152, 134 220, 134 300 
+         C 134 330, 144 354, 160 376 
+         L 133 425 
+         L 194 407 
+         C 216 418, 240 424, 266 424 
+         C 346 424, 412 360, 412 280 
+         C 412 254, 405 230, 392 210" 
+      stroke-width="26" 
+    />
+  </g>
 
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const idx = (width * y + x) << 2;
+  <!-- Horizontal Minus / Pill Bar at Top Right -->
+  <rect x="318" y="170" width="80" height="24" rx="12" fill="#FFFFFF"/>
 
-      const dx = x - cx;
-      const dy = y - cy;
-      const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+  <!-- Phone Receiver Handle Centered inside bubble -->
+  <path 
+    fill="#FFFFFF" 
+    d="M 226 205
+       C 218 205, 206 211, 201 219
+       C 193 232, 195 258, 218 296
+       C 241 334, 266 348, 281 349
+       C 292 349, 302 342, 309 332
+       C 313 326, 319 313, 314 306
+       C 310 299, 296 290, 287 285
+       C 278 280, 273 282, 268 288
+       C 264 293, 258 299, 252 297
+       C 246 295, 235 287, 225 272
+       C 215 257, 213 247, 216 242
+       C 219 237, 227 234, 230 228
+       C 233 222, 230 209, 226 205 Z"
+  />
+</svg>`;
 
-      // Background color
-      let r = bgR, g = bgG, b = bgB, a = 255;
+// Also generate full-bleed / maskable version (without rounded corners so OS can crop safely)
+const maskableSvgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="waGreenGradMask" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4CE876"/>
+      <stop offset="50%" stop-color="#3CD56B"/>
+      <stop offset="100%" stop-color="#23BD5E"/>
+    </linearGradient>
+  </defs>
 
-      if (!isMaskable) {
-        // Squircle / Rounded rectangle check
-        const squircleDist = Math.pow(Math.abs(dx / (width * 0.44)), 4) + Math.pow(Math.abs(dy / (height * 0.44)), 4);
-        if (squircleDist > 1) {
-          a = 0; // transparent corners
-        }
-      }
+  <!-- Full bleed Background for Maskable Icon -->
+  <rect width="512" height="512" fill="url(#waGreenGradMask)"/>
 
-      if (a > 0) {
-        // Draw white chat bubble
-        const bubbleDist = Math.sqrt(dx * dx + dy * dy);
-        // Chat bubble tail
-        const tailX = dx + width * 0.18;
-        const tailY = dy - height * 0.18;
-        const tailDist = Math.sqrt(tailX * tailX + tailY * tailY);
+  <!-- Scaled slightly for safe zone -->
+  <g transform="translate(38, 38) scale(0.85)">
+    <!-- Speech Bubble Outline with gap at top right and speech tail at bottom left -->
+    <path 
+      d="M 296 155 
+         C 200 152, 134 220, 134 300 
+         C 134 330, 144 354, 160 376 
+         L 133 425 
+         L 194 407 
+         C 216 418, 240 424, 266 424 
+         C 346 424, 412 360, 412 280 
+         C 412 254, 405 230, 392 210" 
+      fill="none"
+      stroke="#FFFFFF" 
+      stroke-width="26" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+    />
 
-        if (bubbleDist < bubbleRadius || tailDist < bubbleRadius * 0.35) {
-          // Inner green cutout
-          const innerDist = Math.sqrt((dx + width * 0.02) * (dx + width * 0.02) + (dy + height * 0.02) * (dy + height * 0.02));
-          if (innerDist > bubbleRadius * 0.72 && innerDist < bubbleRadius * 0.88) {
-            // green ring / detail
-          } else {
-            r = whiteR;
-            g = whiteG;
-            b = whiteB;
-          }
-        }
-      }
+    <!-- Horizontal Minus / Pill Bar at Top Right -->
+    <rect x="318" y="170" width="80" height="24" rx="12" fill="#FFFFFF"/>
 
-      png.data[idx] = r;
-      png.data[idx + 1] = g;
-      png.data[idx + 2] = b;
-      png.data[idx + 3] = a;
-    }
-  }
+    <!-- Phone Receiver Handle Centered inside bubble -->
+    <path 
+      fill="#FFFFFF" 
+      d="M 226 205
+         C 218 205, 206 211, 201 219
+         C 193 232, 195 258, 218 296
+         C 241 334, 266 348, 281 349
+         C 292 349, 302 342, 309 332
+         C 313 326, 319 313, 314 306
+         C 310 299, 296 290, 287 285
+         C 278 280, 273 282, 268 288
+         C 264 293, 258 299, 252 297
+         C 246 295, 235 287, 225 272
+         C 215 257, 213 247, 216 242
+         C 219 237, 227 234, 230 228
+         C 233 222, 230 209, 226 205 Z"
+    />
+  </g>
+</svg>`;
 
-  return png;
-}
+// Save SVG icon
+fs.writeFileSync(path.join(publicDir, 'icon.svg'), svgContent);
+console.log('Saved public/icon.svg');
 
-// Generate icons
+// Render PNGs
 const icons = [
-  { name: 'pwa-192x192.png', size: 192, maskable: false },
-  { name: 'pwa-512x512.png', size: 512, maskable: false },
-  { name: 'pwa-maskable-512x512.png', size: 512, maskable: true },
-  { name: 'apple-touch-icon.png', size: 180, maskable: false },
+  { name: 'pwa-192x192.png', size: 192, svg: svgContent },
+  { name: 'pwa-512x512.png', size: 512, svg: svgContent },
+  { name: 'apple-touch-icon.png', size: 180, svg: svgContent },
+  { name: 'pwa-maskable-512x512.png', size: 512, svg: maskableSvgContent },
 ];
 
 for (const icon of icons) {
-  const png = drawWhatsAppIcon(icon.size, icon.size, icon.maskable);
-  const filePath = path.join(publicDir, icon.name);
-  png.pack().pipe(fs.createWriteStream(filePath)).on('finish', () => {
-    console.log(`Generated ${icon.name}`);
+  const resvg = new Resvg(icon.svg, {
+    fitTo: {
+      mode: 'width',
+      value: icon.size,
+    },
   });
+  const pngData = resvg.render();
+  const pngBuffer = pngData.asPng();
+  fs.writeFileSync(path.join(publicDir, icon.name), pngBuffer);
+  console.log(`Generated ${icon.name} (${icon.size}x${icon.size})`);
+}
+
+// Generate Android Launcher Icons if android directory exists
+const androidResDir = path.resolve('android/app/src/main/res');
+if (fs.existsSync(androidResDir)) {
+  const androidDensities = [
+    { dir: 'mipmap-mdpi', size: 48 },
+    { dir: 'mipmap-hdpi', size: 72 },
+    { dir: 'mipmap-xhdpi', size: 96 },
+    { dir: 'mipmap-xxhdpi', size: 144 },
+    { dir: 'mipmap-xxxhdpi', size: 192 },
+  ];
+
+  for (const { dir, size } of androidDensities) {
+    const targetDir = path.join(androidResDir, dir);
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
+    }
+    const resvg = new Resvg(svgContent, {
+      fitTo: {
+        mode: 'width',
+        value: size,
+      },
+    });
+    const pngBuffer = resvg.render().asPng();
+    fs.writeFileSync(path.join(targetDir, 'ic_launcher.png'), pngBuffer);
+    fs.writeFileSync(path.join(targetDir, 'ic_launcher_round.png'), pngBuffer);
+    console.log(`Generated Android icon for ${dir} (${size}x${size})`);
+  }
 }

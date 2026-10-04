@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { AppLogo } from './AppLogo';
 
 interface PWAInstallButtonProps {
   variant?: 'topnav' | 'bottomnav' | 'compact';
@@ -84,10 +85,8 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ variant = 't
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fadeIn">
             <div className="w-full max-w-sm rounded-2xl bg-slate-900 border border-slate-800 p-5 shadow-2xl space-y-4">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-base">
-                    📲
-                  </div>
+                <div className="flex items-center gap-2.5">
+                  <AppLogo size={32} className="shadow-md rounded-xl" />
                   <h3 className="text-sm font-bold text-white">Install WhatsCraft on iOS</h3>
                 </div>
                 <button

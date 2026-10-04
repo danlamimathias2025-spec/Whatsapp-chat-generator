@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ExportOptions } from '../utils/exportImage';
 import { PWAInstallButton } from './PWAInstallButton';
+import { AppLogo } from './AppLogo';
 
 interface TopNavProps {
   onExport: (options: ExportOptions) => void;
@@ -31,14 +32,12 @@ export const TopNav: React.FC<TopNavProps> = ({
     <header className="h-16 px-4 sm:px-6 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 flex items-center justify-between z-30 sticky top-0">
       {/* Zone 1: Single text element wordmark */}
       <div className="flex items-center gap-3">
-        <a href="/" className="text-lg sm:text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
-          <span className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-sm shadow-sm">
-            💬
-          </span>
+        <a href="/" className="text-lg sm:text-xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
+          <AppLogo size={32} className="shadow-md rounded-xl" />
           <span>WhatsCraft</span>
         </a>
         <span className="hidden md:inline-block px-2 py-0.5 rounded-full bg-slate-800 text-[11px] font-medium text-slate-400 border border-slate-700/60">
-          Studio Studio Pro
+          Studio Pro
         </span>
       </div>
 
