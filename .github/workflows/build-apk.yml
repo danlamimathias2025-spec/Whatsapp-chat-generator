@@ -38,13 +38,17 @@ jobs:
       - name: Build Web Assets & App Icons
         run: npm run build
 
-      - name: Sync Capacitor Android Project
+      - name: Setup & Sync Capacitor Android Project
         run: |
-          if [ ! -d "android" ]; then
+          if [ ! -f "android/gradlew" ]; then
+            echo "Gradle wrapper not found in android/ directory. Regenerating Capacitor Android platform..."
+            rm -rf android
             npx cap add android
           fi
           npx cap sync android
-          chmod +x android/gradlew
+          if [ -f "android/gradlew" ]; then
+            chmod +x android/gradlew
+          fi
 
       - name: Build Android Debug APK
         run: |
