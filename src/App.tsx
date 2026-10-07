@@ -296,10 +296,47 @@ export default function App() {
     setMessages([...messages, newMsg]);
   };
 
+  const requestAndroidStoragePermissions = async (): Promise<boolean> => {
+    if (typeof window === 'undefined') return true;
+
+    try {
+      // Check if running inside native Android Capacitor container
+      const capacitor = (window as any).Capacitor;
+      const isNative = capacitor?.isNativePlatform?.() || false;
+      const platformName = capacitor?.getPlatform?.() || 'web';
+
+      if (isNative && platformName === 'android') {
+        if ('permissions' in navigator && navigator.permissions?.query) {
+          try {
+            const status = await navigator.permissions.query({ name: 'photos' as any });
+            if (status.state === 'denied') {
+              showToast('⚠️ Storage permission denied. Please enable photos access in Android Settings.');
+              return false;
+            }
+          } catch (e) {
+            // Permission query not supported on all Android WebViews, continue to export safely
+          }
+        }
+      }
+      return true;
+    } catch (err) {
+      console.warn('Runtime permission check handled:', err);
+      return true;
+    }
+  };
+
   const handleExportScreenshot = async (options: ExportOptions) => {
     if (!phoneCanvasRef.current) return;
     try {
       setIsExporting(true);
+
+      // Verify Android storage permission before saving image
+      const hasPermission = await requestAndroidStoragePermissions();
+      if (!hasPermission) {
+        setIsExporting(false);
+        return;
+      }
+
       await exportElementAsImage(phoneCanvasRef.current, options);
       showToast(`🎉 ${platform === 'telegram' ? 'Telegram' : 'WhatsApp'} screenshot exported successfully!`);
     } catch (err) {
