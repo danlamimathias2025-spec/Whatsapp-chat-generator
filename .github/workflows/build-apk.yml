@@ -35,7 +35,7 @@ jobs:
       - name: Install Node Dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Build Web Assets & App Icons
+      - name: Build Web Assets
         run: npm run build
 
       - name: Setup & Sync Capacitor Android Project
@@ -46,6 +46,8 @@ jobs:
             npx cap add android
           fi
           npx cap sync android
+          # Re-apply custom app icons & launcher foregrounds into android/ res directory
+          node scripts/generate-png-icons.js
           if [ -f "android/gradlew" ]; then
             chmod +x android/gradlew
           fi

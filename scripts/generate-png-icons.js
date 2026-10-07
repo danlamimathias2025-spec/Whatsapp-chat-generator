@@ -120,7 +120,7 @@ const maskableSvgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0
 fs.writeFileSync(path.join(publicDir, 'icon.svg'), svgContent);
 console.log('Saved public/icon.svg');
 
-// Render PNGs
+// Render PNGs for Web & PWA
 const icons = [
   { name: 'pwa-192x192.png', size: 192, svg: svgContent },
   { name: 'pwa-512x512.png', size: 512, svg: svgContent },
@@ -141,31 +141,44 @@ for (const icon of icons) {
   console.log(`Generated ${icon.name} (${icon.size}x${icon.size})`);
 }
 
-// Generate Android Launcher Icons if android directory exists
+// Generate Android Launcher Icons into android/ directory if present
 const androidResDir = path.resolve('android/app/src/main/res');
 if (fs.existsSync(androidResDir)) {
   const androidDensities = [
-    { dir: 'mipmap-mdpi', size: 48 },
-    { dir: 'mipmap-hdpi', size: 72 },
-    { dir: 'mipmap-xhdpi', size: 96 },
-    { dir: 'mipmap-xxhdpi', size: 144 },
-    { dir: 'mipmap-xxxhdpi', size: 192 },
+    { dir: 'mipmap-mdpi', size: 48, fgSize: 108 },
+    { dir: 'mipmap-hdpi', size: 72, fgSize: 162 },
+    { dir: 'mipmap-xhdpi', size: 96, fgSize: 216 },
+    { dir: 'mipmap-xxhdpi', size: 144, fgSize: 324 },
+    { dir: 'mipmap-xxxhdpi', size: 192, fgSize: 432 },
   ];
 
-  for (const { dir, size } of androidDensities) {
+  for (const { dir, size, fgSize } of androidDensities) {
     const targetDir = path.join(androidResDir, dir);
     if (!fs.existsSync(targetDir)) {
       fs.mkdirSync(targetDir, { recursive: true });
     }
-    const resvg = new Resvg(svgContent, {
+    
+    // 1. Full launcher icon (legacy & round)
+    const resvgFull = new Resvg(svgContent, {
       fitTo: {
         mode: 'width',
         value: size,
       },
     });
-    const pngBuffer = resvg.render().asPng();
-    fs.writeFileSync(path.join(targetDir, 'ic_launcher.png'), pngBuffer);
-    fs.writeFileSync(path.join(targetDir, 'ic_launcher_round.png'), pngBuffer);
-    console.log(`Generated Android icon for ${dir} (${size}x${size})`);
+    const pngBufferFull = resvgFull.render().asPng();
+    fs.writeFileSync(path.join(targetDir, 'ic_launcher.png'), pngBufferFull);
+    fs.writeFileSync(path.join(targetDir, 'ic_launcher_round.png'), pngBufferFull);
+
+    // 2. Adaptive Foreground launcher icon (maskable full-bleed)
+    const resvgFg = new Resvg(maskableSvgContent, {
+      fitTo: {
+        mode: 'width',
+        value: fgSize,
+      },
+    });
+    const pngBufferFg = resvgFg.render().asPng();
+    fs.writeFileSync(path.join(targetDir, 'ic_launcher_foreground.png'), pngBufferFg);
+
+    console.log(`Generated Android launcher icons for ${dir}`);
   }
 }
